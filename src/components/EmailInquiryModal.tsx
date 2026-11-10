@@ -38,7 +38,7 @@ export function EmailInquiryModal({
   onClose,
   onSubmitSuccess,
   defaultService = 'Résumé Revamp ($99) — 24-48h Turnaround',
-  recipientEmail = 'ngotsch@outlook.com',
+  recipientEmail = 'purposeandglowcareers@gmail.com',
   isDarkMode = false
 }: EmailInquiryModalProps) {
   const [name, setName] = useState('');
@@ -151,7 +151,7 @@ export function EmailInquiryModal({
           isDarkMode
             ? 'bg-[#151720] border-[#2A2E3D] text-[#ECEFF4]'
             : 'bg-white border-slate-200 text-[#2D2D2D]'
-        } overflow-hidden`}
+        } overflow-hidden max-h-[92vh] flex flex-col`}
         onClick={(e) => e.stopPropagation()}
         role="dialog"
         aria-modal="true"
@@ -159,31 +159,31 @@ export function EmailInquiryModal({
       >
         {/* Top Header Banner */}
         <div
-          className={`px-6 py-4 border-b flex items-center justify-between ${
+          className={`px-4 sm:px-6 py-3.5 sm:py-4 border-b flex items-center justify-between shrink-0 ${
             isDarkMode
               ? 'bg-[#1C1F2B] border-[#2A2E3D]'
               : 'bg-[#FFF0F5] border-[#F0C6D6]'
           }`}
         >
-          <div className="flex items-center gap-3">
-            <div className="w-9 h-9 rounded-full bg-[#C2185B] text-white flex items-center justify-center shadow-xs">
+          <div className="flex items-center gap-2.5 sm:gap-3">
+            <div className="w-8 sm:w-9 h-8 sm:h-9 rounded-full bg-[#C2185B] text-white flex items-center justify-center shadow-xs shrink-0">
               <Mail className="w-4 h-4" />
             </div>
             <div>
               <h2
                 id="modal-title"
-                className={`text-base font-bold font-serif ${
+                className={`text-sm sm:text-base font-bold font-serif ${
                   isDarkMode ? 'text-white' : 'text-[#2D2D2D]'
                 }`}
               >
                 Send Direct Message to Nicole
               </h2>
               <div className="flex items-center gap-2 text-xs">
-                <span className={isDarkMode ? 'text-pink-300' : 'text-[#C2185B] font-medium'}>
+                <span className={`text-[11px] sm:text-xs truncate max-w-[150px] sm:max-w-none ${isDarkMode ? 'text-pink-300' : 'text-[#C2185B] font-medium'}`}>
                   {recipientEmail}
                 </span>
-                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse" />
-                <span className={isDarkMode ? 'text-slate-400' : 'text-slate-500'}>
+                <span className="w-1.5 h-1.5 rounded-full bg-emerald-500 animate-pulse shrink-0" />
+                <span className={`hidden sm:inline text-xs ${isDarkMode ? 'text-slate-400' : 'text-slate-500'}`}>
                   Verified Direct Inbox
                 </span>
               </div>
@@ -193,7 +193,7 @@ export function EmailInquiryModal({
           <button
             type="button"
             onClick={resetAndClose}
-            className={`p-1.5 rounded-lg transition-colors cursor-pointer ${
+            className={`p-2 min-w-[40px] min-h-[40px] flex items-center justify-center rounded-lg transition-colors cursor-pointer ${
               isDarkMode
                 ? 'text-slate-400 hover:text-white hover:bg-[#252A3A]'
                 : 'text-slate-400 hover:text-slate-700 hover:bg-pink-100/50'
@@ -205,7 +205,7 @@ export function EmailInquiryModal({
         </div>
 
         {/* Content Body */}
-        <div className="p-6">
+        <div className="p-4 sm:p-6 overflow-y-auto flex-1 -webkit-overflow-scrolling-touch">
           {isSubmitted ? (
             /* Success State */
             <div className="py-6 text-center space-y-4">

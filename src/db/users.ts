@@ -1,6 +1,8 @@
 import { db } from './index.ts';
 import { users } from './schema.ts';
 
+const inMemoryUsers = new Map<string, any>();
+
 export async function getOrCreateUser(
   uid: string,
   email: string,
@@ -28,7 +30,16 @@ export async function getOrCreateUser(
 
     return result[0];
   } catch (error) {
-    console.error('Error in getOrCreateUser:', error);
-    throw new Error('Database user sync failed.', { cause: error });
+    console.warn('Database unavailable, syncing user in-memory:', (error as any)?.message);
+    const user = {
+      uid,
+      email,
+      displayName: displayName || null,
+      photoUrl: photoUrl || null,
+      createdAt: new Date(),
+      updatedAt: new Date()
+    };
+    inMemoryUsers.set(uid, user);
+    return user;
   }
 }

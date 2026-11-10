@@ -54,7 +54,20 @@ export interface LeadSignal {
   yearsExperience: number;
   isHealthcareOrOps: boolean;
   hasExistingResume: boolean;
-  status: 'new_signal' | 'diagnostic_sent' | 'diy_review_offered' | 'booked_client' | 'filtered_noise';
+  status:
+    | 'new_lead'
+    | 'new_signal'
+    | 'contacted'
+    | 'diagnostic_sent'
+    | 'interested'
+    | 'diy_review_offered'
+    | 'follow_up_needed'
+    | 'client'
+    | 'booked_client'
+    | 'completed'
+    | 'not_interested'
+    | 'closed'
+    | 'filtered_noise';
   detectedCluster?: 'healthcare_rcm' | 'career_pivot' | 'layoff_urgent' | 'student_grad' | 'general';
   recommendedPackageId: ServicePackage['id'];
   diagnosticBottleNeck: string;

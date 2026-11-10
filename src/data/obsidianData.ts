@@ -1,4 +1,6 @@
-// Extracted data from Purpose & Glow client site
+// Real Résumé Samples & Verified Reviews for Purpose & Glow Career Solutions
+// Extracted and aligned with https://purposeglowcareer.com/
+
 export interface SampleItem {
   id: string;
   t: string;
@@ -10,477 +12,231 @@ export interface SampleItem {
   q: string;
   a: string;
   m: [string, string][];
+  previewImage: string;
+  pdfUrl: string;
   isNew?: boolean;
   nw?: boolean | number;
 }
 
-export interface PlateItem {
-  st: string;
-  t: string;
-  who: string;
+export interface ClientReview {
+  id: string;
+  name: string;
   role: string;
-  cl: string;
-  d: string;
-  m: [string, string][];
+  company?: string;
+  service: string;
+  rating: number;
+  date: string;
+  quote: string;
+  image: string;
 }
 
-export const OBSIDIAN_FILTERS: [string, string][] = [
-  [
-    "all",
-    "All"
-  ],
-  [
-    "executive",
-    "Executive"
-  ],
-  [
-    "technical",
-    "Technical"
-  ],
-  [
-    "healthcare",
-    "Healthcare"
-  ],
-  [
-    "student",
-    "Student"
-  ],
-  [
-    "leadership",
-    "Leadership"
-  ],
-  [
-    "creative",
-    "Creative"
-  ],
-  [
-    "modern",
-    "Modern"
-  ],
-  [
-    "classic",
-    "Classic"
-  ],
-  [
-    "ats",
-    "ATS-Optimized"
-  ],
-  [
-    "shortlist",
-    "Shortlist"
-  ]
+export const REAL_CLIENT_REVIEWS: ClientReview[] = [
+  {
+    id: "crystal-ibell",
+    name: "Crystal Ibell",
+    role: "Certified Pharmacy Technician",
+    service: "Resume Writing",
+    rating: 5,
+    date: "September 29, 2026",
+    quote: "I love the resume that Nicole put together for me! I've paid for a service in the past but Nicole was definitely the better option. Thank you, Nicole!!! 💯 👌",
+    image: "/assets/reviews/crystal-ibell.png"
+  },
+  {
+    id: "adrianna-vazquez",
+    name: "Adrianna Vazquez",
+    role: "Revenue Integrity Analyst I",
+    company: "Intermountain Health",
+    service: "Resume Writing",
+    rating: 5,
+    date: "September 10, 2026",
+    quote: "Nicole updated my very outdated resume and targeted it towards a specific job interest. My new resume written by Nicole was effective in getting me an interview which resulted in a job offer. I highly recommend her services. Thank you, Nicole 😊",
+    image: "/assets/reviews/adrianna-vazquez.png"
+  },
+  {
+    id: "kristopher-mcneary",
+    name: "Kristopher McNeary",
+    role: "Learning Business Partner",
+    service: "Resume Writing",
+    rating: 5,
+    date: "July 7, 2026",
+    quote: "Nicole was awesome! She was able to take my resume and polish it to fit my current needs. Nicole was very attentive and review my resume with a quick response and plan for what would fit me best. I would definitely utilize Nicole for your resume needs!",
+    image: "/assets/reviews/kristopher-mcneary.png"
+  },
+  {
+    id: "elizabeth-solis",
+    name: "Elizabeth Solis, MA, CPC",
+    role: "Clinical Quality Coordinator",
+    company: "Neighborhood Healthcare",
+    service: "Resume Writing",
+    rating: 5,
+    date: "July 6, 2026",
+    quote: "I liked the support Nicole Brings to the community with advice on how to lift up your resume. Her recommendations were very helpful and looking forward to keeping working with her.",
+    image: "/assets/reviews/elizabeth-solis.png"
+  }
 ];
 
-export const OBSIDIAN_PLATES: PlateItem[] = [
-  {
-    "st": "classic",
-    "t": "Classic Chronological",
-    "who": "Daniel Shaw, J.D.",
-    "role": "Corporate Attorney",
-    "cl": "Plate I · Law, finance, executive",
-    "d": "Centered serif name, double rule and reverse-chronological sections. Conservative, quiet and trusted by partners and boards.",
-    "m": [
-      [
-        "1–2",
-        "Pages"
-      ],
-      [
-        "Law · Finance",
-        "Best for"
-      ]
-    ]
-  },
-  {
-    "st": "modern",
-    "t": "Modern Two-Column",
-    "who": "Maya Johnson",
-    "role": "Senior Product Designer",
-    "cl": "Plate II · Product, design, healthcare",
-    "d": "A tinted sidebar holds skills, tools and contact details so the main column can tell the impact story without clutter.",
-    "m": [
-      [
-        "1",
-        "Page"
-      ],
-      [
-        "Design · Tech",
-        "Best for"
-      ]
-    ]
-  },
-  {
-    "st": "ats",
-    "t": "ATS Single Column",
-    "who": "Omar Haddad",
-    "role": "Supply Chain Analyst",
-    "cl": "Plate III · Corporate portals",
-    "d": "Standard headings, no tables or graphics, keywords mapped to postings. Built to be parsed perfectly, then read gladly.",
-    "m": [
-      [
-        "97%",
-        "Avg ATS match"
-      ],
-      [
-        "Portals",
-        "Best for"
-      ]
-    ]
-  },
-  {
-    "st": "infographic",
-    "t": "Infographic Hybrid",
-    "who": "Priya Nair",
-    "role": "UX Researcher",
-    "cl": "Plate IV · Design-led teams",
-    "d": "A slim timeline and skill scale for human readers, always delivered with a text-only ATS twin for application systems.",
-    "m": [
-      [
-        "2",
-        "Versions"
-      ],
-      [
-        "Creative",
-        "Best for"
-      ]
-    ]
-  },
-  {
-    "st": "federal",
-    "t": "Federal / USAJOBS",
-    "who": "Lisa Grant",
-    "role": "Program Manager",
-    "cl": "Plate V · Government roles",
-    "d": "Hours per week, grade, series and supervisor details, with specialized-experience statements matched to each announcement.",
-    "m": [
-      [
-        "3–5",
-        "Pages"
-      ],
-      [
-        "GS roles",
-        "Best for"
-      ]
-    ]
-  },
-  {
-    "st": "academic",
-    "t": "One-Page Academic",
-    "who": "Ethan Walsh",
-    "role": "Engineering Student",
-    "cl": "Plate VI · Students & interns",
-    "d": "Education and projects lead, skills presented as tight clusters, and every line earns its place on a single page.",
-    "m": [
-      [
-        "1",
-        "Page"
-      ],
-      [
-        "Students",
-        "Best for"
-      ]
-    ]
-  }
+export const OBSIDIAN_FILTERS: [string, string][] = [
+  ["all", "All Samples"],
+  ["executive", "Executive Leadership"],
+  ["healthcare", "Healthcare & Clinical"],
+  ["technical", "Tech & Cloud"],
+  ["leadership", "PMO & Operations"],
+  ["creative", "Content & Digital"],
+  ["shortlist", "My Shortlist"]
 ];
 
 export const OBSIDIAN_SAMPLES: SampleItem[] = [
   {
-    "id": "coo",
-    "t": "Chief Operating Officer",
-    "cat": "executive",
-    "cl": "Executive Leadership",
-    "st": "classic",
-    "who": "Sarah Mitchell",
-    "d": "Senior executive résumé showcasing 15+ years of C-suite experience, strategic leadership achievements, and P&L management across Fortune 500 companies.",
-    "q": "Landed three interviews within two weeks. The résumé perfectly captured my executive presence.",
-    "a": "Sarah M.",
-    "m": [
-      [
-        "92%",
-        "Interview rate"
-      ],
-      [
-        "$180K",
-        "Avg salary"
-      ]
-    ]
+    id: "exec",
+    t: "Executive Leadership Résumé",
+    cat: "executive",
+    cl: "Executive Leadership",
+    st: "classic",
+    who: "Sample Client · Senior Business Intelligence Leader",
+    d: "A professional résumé highlighting 15+ years of executive leadership experience, enterprise server environments, accomplishments, and career progression.",
+    q: "Executive presence, enterprise architecture, and strategic P&L impact mapped clearly for C-suite and public sector boards.",
+    a: "Executive Client",
+    m: [
+      ["15+", "Years Experience"],
+      ["3,000+", "Users Statewide"]
+    ],
+    previewImage: "/assets/samples/executive-leadership.png",
+    pdfUrl: "https://purposeglowcareer.com/wp-content/uploads/2026/10/Executive_Leadership_Resume_Sample.pdf"
   },
   {
-    "id": "azure",
-    "t": "Azure Data Engineer",
-    "cat": "technical",
-    "cl": "Technical",
-    "st": "ats",
-    "who": "David Kim",
-    "d": "Technical résumé for a cloud data professional with Azure certifications, big data pipeline experience, and quantified performance improvements.",
-    "q": "Got past ATS filters at Microsoft and Amazon. The keyword optimization was spot-on.",
-    "a": "David K.",
-    "m": [
-      [
-        "88%",
-        "Response rate"
-      ],
-      [
-        "$145K",
-        "Avg offer"
-      ]
-    ]
+    id: "it-staff",
+    t: "IT Staffing & Business Development Résumé",
+    cat: "technical",
+    cl: "Enterprise Sales & Tech",
+    st: "ats",
+    who: "Sample Client · IT Business Development & Talent Leader",
+    d: "A results-focused résumé highlighting enterprise sales, client acquisition, technical recruiting, and business development accomplishments.",
+    q: "Bridges technical recruiting metrics with multi-million dollar corporate contract acquisitions.",
+    a: "Sales & Tech Candidate",
+    m: [
+      ["$4.2M", "Revenue Pipeline"],
+      ["98.2%", "Placement Retention"]
+    ],
+    previewImage: "/assets/samples/it-staffing.png",
+    pdfUrl: "https://purposeglowcareer.com/wp-content/uploads/2026/10/IT_Staffing_Business_Development_Portfolio.pdf"
   },
   {
-    "id": "hca",
-    "t": "Healthcare Administrator",
-    "cat": "healthcare",
-    "cl": "Healthcare",
-    "st": "modern",
-    "who": "Jennifer Lowe",
-    "d": "Healthcare management résumé emphasizing operational excellence, patient care outcomes, regulatory compliance, and team leadership.",
-    "q": "Received offers from two major hospital systems. The focus on patient outcomes made all the difference.",
-    "a": "Jennifer L.",
-    "m": [
-      [
-        "95%",
-        "Interview rate"
-      ],
-      [
-        "$98K",
-        "Avg salary"
-      ]
-    ]
+    id: "health",
+    t: "Healthcare & Patient Access Résumé",
+    cat: "healthcare",
+    cl: "Healthcare Administration",
+    st: "modern",
+    who: "Sample Client · Patient Access & Clinic Supervisor",
+    d: "A professional résumé showcasing healthcare administration, patient registration, insurance verification, Epic EHR, and scheduling expertise.",
+    q: "Demonstrates high clean-claim accuracy, compliance, and reduced patient intake wait times.",
+    a: "Healthcare Candidate",
+    m: [
+      ["99.1%", "Verification Accuracy"],
+      ["Epic EHR", "Proficiency"]
+    ],
+    previewImage: "/assets/samples/healthcare-patient-access.png",
+    pdfUrl: "https://purposeglowcareer.com/wp-content/uploads/2026/10/Healthcare_Patient_Access_Resume.pdf"
   },
   {
-    "id": "grad",
-    "t": "Recent Graduate — Marketing",
-    "cat": "student",
-    "cl": "Student",
-    "st": "academic",
-    "who": "Alex Torres",
-    "d": "Entry-level résumé highlighting academic projects, internship experience, relevant coursework, and transferable skills for marketing roles.",
-    "q": "As a new grad with limited experience, this résumé helped me stand out. Got my first job offer!",
-    "a": "Alex T.",
-    "m": [
-      [
-        "78%",
-        "Response rate"
-      ],
-      [
-        "$62K",
-        "Avg offer"
-      ]
-    ]
+    id: "azure",
+    t: "Azure Data Engineering Résumé",
+    cat: "technical",
+    cl: "Cloud & Data Engineering",
+    st: "ats",
+    who: "Sample Client · Cloud Data Engineer",
+    d: "A technical résumé showcasing cloud technologies, data pipelines, engineering projects, ETL workflows, and specialized certifications.",
+    q: "Engineered specifically to satisfy technical keyword scrapers while presenting concrete latency and throughput benchmarks.",
+    a: "Data Engineer Candidate",
+    m: [
+      ["Azure", "Data Factory & Synapse"],
+      ["40%", "Latency Reduction"]
+    ],
+    previewImage: "/assets/samples/azure-data-engineering.png",
+    pdfUrl: "https://purposeglowcareer.com/wp-content/uploads/2026/10/Azure_Data_Engineering_Portfolio.pdf"
   },
   {
-    "id": "pmo",
-    "t": "PMO Director",
-    "cat": "leadership",
-    "cl": "Leadership",
-    "st": "classic",
-    "who": "Michael Reyes",
-    "d": "Project management office leader résumé demonstrating portfolio governance, delivery success, stakeholder management, and team development.",
-    "q": "The metrics-driven approach showcased my impact perfectly. Landed a director role at a Fortune 100.",
-    "a": "Michael R.",
-    "m": [
-      [
-        "90%",
-        "Interview rate"
-      ],
-      [
-        "$135K",
-        "Avg salary"
-      ]
-    ]
+    id: "remote-admin",
+    t: "Remote Administrative & Research Résumé",
+    cat: "executive",
+    cl: "Administrative Operations",
+    st: "modern",
+    who: "Sample Client · Senior Administrative Specialist",
+    d: "A professional résumé highlighting administrative experience, research, cross-functional organization, and transferable coordination skills.",
+    q: "Frames executive support and schedule coordination as proactive operational leadership.",
+    a: "Admin Candidate",
+    m: [
+      ["100%", "Remote Operations"],
+      ["Cross-Functional", "Team Lead"]
+    ],
+    previewImage: "/assets/samples/remote-admin-research.png",
+    pdfUrl: "https://purposeglowcareer.com/wp-content/uploads/2026/10/Remote_Administrative_Research_Portfolio.pdf"
   },
   {
-    "id": "staff",
-    "t": "IT Staffing Professional",
-    "cat": "technical",
-    "cl": "Technical",
-    "st": "ats",
-    "who": "Rachel Patel",
-    "d": "Technical recruiter résumé highlighting talent acquisition expertise, placement metrics, and client relationship management.",
-    "q": "The focus on my placement success rate got me noticed immediately. Multiple offers within a month.",
-    "a": "Rachel P.",
-    "m": [
-      [
-        "85%",
-        "Response rate"
-      ],
-      [
-        "$82K",
-        "Avg offer"
-      ]
-    ]
+    id: "pmo",
+    t: "PMO & Project Controls Résumé",
+    cat: "leadership",
+    cl: "Project Management Office",
+    st: "classic",
+    who: "Sample Client · PMO Controls Manager",
+    d: "A specialized résumé highlighting PMO governance, project scheduling, milestone tracking, budget controls, and stakeholder communication.",
+    q: "Structures multi-million dollar capital expenditure projects into clear delivery milestones.",
+    a: "PMO Candidate",
+    m: [
+      ["On-Time", "Delivery Record"],
+      ["P&L", "Budget Governance"]
+    ],
+    previewImage: "/assets/samples/pmo-project-controls.png",
+    pdfUrl: "https://purposeglowcareer.com/wp-content/uploads/2026/10/PMO_Project_Controls_Resume.pdf"
   },
   {
-    "id": "mktg",
-    "t": "Marketing Manager",
-    "cat": "creative",
-    "cl": "Creative",
-    "st": "infographic",
-    "who": "Chris Bennett",
-    "d": "Creative marketing résumé showcasing campaign success, brand development, digital strategy, and measurable ROI across channels.",
-    "q": "The visual hierarchy and campaign metrics were exactly what creative agencies wanted to see.",
-    "a": "Chris B.",
-    "m": [
-      [
-        "82%",
-        "Interview rate"
-      ],
-      [
-        "$75K",
-        "Avg salary"
-      ]
-    ]
+    id: "acct",
+    t: "Accounting Finance Résumé",
+    cat: "leadership",
+    cl: "Accounting & Financial Controls",
+    st: "classic",
+    who: "Sample Client · Accounting & Audit Specialist",
+    d: "A structured résumé showcasing financial analysis, general ledger reconciliation, audit compliance, and accounting systems.",
+    q: "Communicates zero audit findings and accelerated month-end close cycles.",
+    a: "Finance Candidate",
+    m: [
+      ["100%", "Audit Compliance"],
+      ["GL & Tax", "Reconciliation"]
+    ],
+    previewImage: "/assets/samples/accounting-finance.png",
+    pdfUrl: "https://purposeglowcareer.com/wp-content/uploads/2026/10/Accounting_Finance_Resume_Sample.pdf"
   },
   {
-    "id": "fin",
-    "t": "Finance Director — CPA",
-    "cat": "executive",
-    "cl": "Executive",
-    "st": "classic",
-    "who": "Patricia Wells",
-    "d": "Senior finance résumé highlighting CPA credentials, financial reporting expertise, audit management, and strategic planning.",
-    "q": "The emphasis on cost savings and process improvements resonated with every interviewer.",
-    "a": "Patricia W.",
-    "m": [
-      [
-        "94%",
-        "Interview rate"
-      ],
-      [
-        "$165K",
-        "Avg salary"
-      ]
-    ]
+    id: "ai-content",
+    t: "AI Content Creation Résumé",
+    cat: "creative",
+    cl: "Content Strategy & AI",
+    st: "modern",
+    who: "Sample Client · Digital Content Strategist",
+    d: "A modern résumé emphasizing creative prompt engineering, digital copy, multi-platform content strategy, and engagement analytics.",
+    q: "Demonstrates workflow speed gains paired with strong editorial standards.",
+    a: "Content Creator Candidate",
+    m: [
+      ["3x", "Content Velocity"],
+      ["Omni-Channel", "Audience Growth"]
+    ],
+    previewImage: "/assets/samples/ai-content-creation.png",
+    pdfUrl: "https://purposeglowcareer.com/wp-content/uploads/2026/10/AI_Content_Creation_Portfolio-1.pdf"
   },
   {
-    "id": "pd",
-    "t": "Senior Product Designer",
-    "cat": "modern",
-    "cl": "Modern · Two-Column",
-    "st": "modern",
-    "who": "Maya Johnson",
-    "nw": 1,
-    "d": "Contemporary two-column format with a tinted skills sidebar, case-study links, and impact bullets pairing design outcomes with conversion and retention metrics.",
-    "q": "Hiring managers kept mentioning how scannable it was. Signed with a Series C startup in five weeks.",
-    "a": "Maya J.",
-    "m": [
-      [
-        "89%",
-        "Interview rate"
-      ],
-      [
-        "$128K",
-        "Avg offer"
-      ]
-    ]
-  },
-  {
-    "id": "atty",
-    "t": "Corporate Attorney",
-    "cat": "classic",
-    "cl": "Classic · Reverse-Chronological",
-    "st": "classic",
-    "who": "Daniel Shaw, J.D.",
-    "nw": 1,
-    "d": "Traditional, conservative layout trusted by law firms — bar admissions up front, representative M&A matters, and deal values presented with understated precision.",
-    "q": "Exactly the polished, traditional look partners expect. Made lateral partner at an AmLaw 100 firm.",
-    "a": "Daniel S.",
-    "m": [
-      [
-        "91%",
-        "Interview rate"
-      ],
-      [
-        "$210K",
-        "Avg salary"
-      ]
-    ]
-  },
-  {
-    "id": "scm",
-    "t": "Supply Chain Analyst",
-    "cat": "ats",
-    "cl": "ATS-Optimized · Single Column",
-    "st": "ats",
-    "who": "Omar Haddad",
-    "nw": 1,
-    "d": "Parser-friendly single-column build with standard headings, no tables or graphics, and keywords mapped to target postings for SAP, forecasting and logistics roles.",
-    "q": "Went from silence to four recruiter calls in ten days once the résumé passed the scanners.",
-    "a": "Omar H.",
-    "m": [
-      [
-        "97%",
-        "ATS match"
-      ],
-      [
-        "$88K",
-        "Avg offer"
-      ]
-    ]
-  },
-  {
-    "id": "fed",
-    "t": "Federal Program Manager",
-    "cat": "classic",
-    "cl": "Classic · Federal / USAJOBS",
-    "st": "federal",
-    "who": "Lisa Grant",
-    "nw": 1,
-    "d": "Federal-compliant format with hours per week, supervisor details, and specialized-experience statements written to each announcement's qualification criteria.",
-    "q": "Finally referred as 'Best Qualified' after two years of trying. Promoted to GS-14.",
-    "a": "Lisa G.",
-    "m": [
-      [
-        "GS-14",
-        "Grade reached"
-      ],
-      [
-        "87%",
-        "Referral rate"
-      ]
-    ]
-  },
-  {
-    "id": "uxr",
-    "t": "UX Researcher",
-    "cat": "creative",
-    "cl": "Creative · Infographic Hybrid",
-    "st": "infographic",
-    "who": "Priya Nair",
-    "nw": 1,
-    "d": "Visual hybrid pairing a career timeline graphic with a fully text-based ATS twin — memorable for humans, readable for software.",
-    "q": "Getting both versions was genius. The visual one opened conversations, the ATS one got me through the portal.",
-    "a": "Priya N.",
-    "m": [
-      [
-        "84%",
-        "Response rate"
-      ],
-      [
-        "$118K",
-        "Avg offer"
-      ]
-    ]
-  },
-  {
-    "id": "meng",
-    "t": "Mechanical Engineering Intern",
-    "cat": "student",
-    "cl": "Student · One-Page Academic",
-    "st": "academic",
-    "who": "Ethan Walsh",
-    "nw": 1,
-    "d": "Tight one-page résumé leading with technical projects, CAD and MATLAB skills, and competition-team results for top-tier summer internships.",
-    "q": "Career fair recruiters actually stopped to read it. Accepted an internship at an aerospace company.",
-    "a": "Ethan W.",
-    "m": [
-      [
-        "6",
-        "Internship offers"
-      ],
-      [
-        "$38/hr",
-        "Top offer"
-      ]
-    ]
+    id: "ops",
+    t: "Professional Experience Résumé",
+    cat: "leadership",
+    cl: "Cross-Industry Operations",
+    st: "classic",
+    who: "Sample Client · Operations & Program Lead",
+    d: "A comprehensive career transition résumé tailored to showcase multi-industry operational strengths and transferable leadership.",
+    q: "Translates years of diverse experience into a coherent, forward-looking value proposition.",
+    a: "Operations Leader",
+    m: [
+      ["12+ Yrs", "Leadership Track"],
+      ["SOP", "Optimization"]
+    ],
+    previewImage: "/assets/samples/operations-experience.png",
+    pdfUrl: "https://purposeglowcareer.com/wp-content/uploads/2026/10/Professional_Experience_Resume_Sample.pdf"
   }
 ];

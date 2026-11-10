@@ -6,7 +6,7 @@ import { GoogleGenAI } from '@google/genai';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-import { requireAuth, optionalAuth, AuthRequest } from './src/middleware/auth.ts';
+import { requireAuth, optionalAuth, type AuthRequest } from './src/middleware/auth.ts';
 import { getOrCreateUser } from './src/db/users.ts';
 import { getSavedLeads, upsertLead, updateLeadStatus } from './src/db/leads.ts';
 import { getChatHistory, saveChatMessage } from './src/db/chat.ts';
@@ -16,7 +16,7 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 const isProduction = process.env.NODE_ENV === 'production';
-const PORT = Number(process.env.PORT) || 3000;
+const PORT = 3000;
 
 const app = express();
 app.use(express.json({ limit: '2mb' }));
@@ -757,7 +757,7 @@ const inboundInquiries: InboundInquiry[] = [
     targetRole: 'RCM Supervisor',
     urgency: 'urgent_48h',
     message: 'Need help overturning denial bullet points into quantifiable metrics for an Allina Health application closing this Friday.',
-    recipientEmail: 'ngotsch@outlook.com',
+    recipientEmail: 'purposeandglowcareers@gmail.com',
     timestamp: new Date(Date.now() - 18 * 60 * 1000).toISOString(),
     isRead: false,
     status: 'new'
@@ -772,6 +772,7 @@ app.post('/api/contact/email', (req, res) => {
       return res.status(400).json({ error: 'Name, email, and message are required' });
     }
 
+    const businessEmail = process.env.BUSINESS_EMAIL || 'purposeandglowcareers@gmail.com';
     const inquiry: InboundInquiry = {
       id: `inq-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
       name: String(name).trim(),
@@ -782,7 +783,7 @@ app.post('/api/contact/email', (req, res) => {
       targetRole: targetRole ? String(targetRole).trim() : undefined,
       urgency: urgency || 'standard_week',
       message: String(message).trim(),
-      recipientEmail: recipientEmail || 'ngotsch@outlook.com',
+      recipientEmail: recipientEmail || businessEmail,
       timestamp: new Date().toISOString(),
       isRead: false,
       status: 'new'
@@ -801,6 +802,83 @@ app.post('/api/contact/email', (req, res) => {
   } catch (err: any) {
     console.error('Error in /api/contact/email:', err);
     res.status(500).json({ error: err.message || 'Failed to dispatch email' });
+  }
+});
+
+// POST /api/assessment/submit - Process detailed Free Career & Résumé Assessment
+app.post('/api/assessment/submit', (req, res) => {
+  try {
+    const {
+      fullName,
+      email,
+      phone,
+      locationState,
+      educationLevel,
+      currentTitle,
+      yearsExperience,
+      targetTitles,
+      preferredIndustry,
+      workStyle,
+      desiredSalary,
+      linkedInUrl,
+      resumeNotes,
+      primaryAssistance,
+      wantsDiyTips
+    } = req.body;
+
+    if (!fullName || !email) {
+      return res.status(400).json({ error: 'Full name and email are required for assessment' });
+    }
+
+    const businessEmail = process.env.BUSINESS_EMAIL || 'purposeandglowcareers@gmail.com';
+    const inquiryId = `assess-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
+
+    const formattedMessage = [
+      `=== FREE CAREER & RÉSUMÉ ASSESSMENT SUBMISSION ===`,
+      `Candidate: ${fullName}`,
+      `Email: ${email} | Phone: ${phone || 'N/A'}`,
+      `Location: ${locationState || 'Not specified'}`,
+      `Current Title: ${currentTitle || 'N/A'} (${yearsExperience || 'N/A'})`,
+      `Target Role(s): ${targetTitles || 'N/A'} in ${preferredIndustry || 'N/A'}`,
+      `Education: ${educationLevel || 'N/A'}`,
+      `Work Preference: ${workStyle || 'N/A'} | Target Salary: ${desiredSalary || 'N/A'}`,
+      `LinkedIn: ${linkedInUrl || 'Not provided'}`,
+      `Selected Service: ${primaryAssistance || 'Free Assessment'}`,
+      `Include DIY Pointers: ${wantsDiyTips ? 'Yes' : 'No'}`,
+      `Notes / Current Résumé Context:`,
+      resumeNotes || '(No additional notes provided)'
+    ].join('\n');
+
+    const assessmentInquiry: InboundInquiry = {
+      id: inquiryId,
+      name: String(fullName).trim(),
+      email: String(email).trim(),
+      phone: phone ? String(phone).trim() : undefined,
+      service: `Assessment: ${primaryAssistance || 'Free Career & Résumé Review'}`,
+      currentRole: currentTitle ? String(currentTitle).trim() : undefined,
+      targetRole: targetTitles ? String(targetTitles).trim() : undefined,
+      urgency: 'urgent_48h',
+      message: formattedMessage,
+      recipientEmail: businessEmail,
+      timestamp: new Date().toISOString(),
+      isRead: false,
+      status: 'new'
+    };
+
+    inboundInquiries.unshift(assessmentInquiry);
+    if (inboundInquiries.length > 100) inboundInquiries.pop();
+
+    console.log(`[ASSESSMENT DISPATCH] Transmitted assessment for ${assessmentInquiry.name} <${assessmentInquiry.email}> to ${businessEmail}`);
+
+    res.json({
+      success: true,
+      id: inquiryId,
+      message: `Assessment successfully submitted and queued for review at ${businessEmail}`,
+      inquiry: assessmentInquiry
+    });
+  } catch (err: any) {
+    console.error('Error in /api/assessment/submit:', err);
+    res.status(500).json({ error: err.message || 'Failed to submit assessment' });
   }
 });
 

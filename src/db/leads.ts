@@ -2,6 +2,8 @@ import { db } from './index.ts';
 import { leads } from './schema.ts';
 import { desc, eq } from 'drizzle-orm';
 
+const inMemoryLeads = new Map<string, any>();
+
 export async function getSavedLeads(userId?: string) {
   try {
     if (userId) {
@@ -9,8 +11,14 @@ export async function getSavedLeads(userId?: string) {
     }
     return await db.select().from(leads).orderBy(desc(leads.createdAt)).limit(50);
   } catch (error) {
-    console.error('Failed to fetch leads from DB:', error);
-    return [];
+    console.warn('Database unavailable, using in-memory leads cache:', (error as any)?.message);
+    const all = Array.from(inMemoryLeads.values());
+    if (userId) {
+      return all
+        .filter((l) => l.userId === userId)
+        .sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
+    }
+    return all.sort((a, b) => new Date(b.createdAt || 0).getTime() - new Date(a.createdAt || 0).getTime());
   }
 }
 
@@ -32,8 +40,16 @@ export async function upsertLead(leadData: typeof leads.$inferInsert) {
       .returning();
     return result[0];
   } catch (error) {
-    console.error('Failed to upsert lead in DB:', error);
-    throw new Error('Database upsert lead failed.', { cause: error });
+    console.warn('Database unavailable, caching lead in memory:', (error as any)?.message);
+    const existing = inMemoryLeads.get(leadData.id) || {};
+    const record = {
+      ...existing,
+      ...leadData,
+      updatedAt: new Date(),
+      createdAt: existing.createdAt || new Date()
+    };
+    inMemoryLeads.set(leadData.id, record);
+    return record;
   }
 }
 
@@ -50,7 +66,15 @@ export async function updateLeadStatus(leadId: string, status: string, notes?: s
       .returning();
     return result[0];
   } catch (error) {
-    console.error('Failed to update lead status in DB:', error);
-    throw new Error('Database update lead status failed.', { cause: error });
+    console.warn('Database unavailable, updating lead status in memory:', (error as any)?.message);
+    const existing = inMemoryLeads.get(leadId) || { id: leadId, createdAt: new Date() };
+    const updated = {
+      ...existing,
+      status,
+      ...(notes !== undefined ? { notes } : {}),
+      updatedAt: new Date()
+    };
+    inMemoryLeads.set(leadId, updated);
+    return updated;
   }
 }

@@ -278,7 +278,7 @@ const CrowdCanvas = ({ src, rows = 15, cols = 7 }: CrowdCanvasProps) => {
     };
   }, []);
   return (
-    <canvas ref={canvasRef} className="absolute bottom-0 h-[90vh] w-full" />
+    <canvas ref={canvasRef} className="absolute bottom-0 h-48 sm:h-[65vh] md:h-[85vh] w-full" />
   );
 };
 
@@ -303,9 +303,9 @@ const Skiper39 = ({
         ? "bg-[#0A0C13] border-[#22283A] text-slate-100"
         : "bg-gradient-to-b from-[#FFF5F8] via-[#FFFFFF] to-[#FFF0F5] border-[#F0C6D6] text-slate-900"
     }`}>
-      {/* Animated Crowd Canvas Layer */}
+      {/* Animated Crowd Canvas Layer — anchored to bottom ground so it never overlaps text on mobile */}
       <div
-        className="absolute inset-0 pointer-events-none opacity-45 dark:opacity-40 transition-all duration-300"
+        className="absolute inset-0 pointer-events-none opacity-30 sm:opacity-45 dark:opacity-25 sm:dark:opacity-40 transition-all duration-300 [mask-image:linear-gradient(to_bottom,transparent_0%,transparent_15%,black_45%,black_100%)]"
         style={{ filter: isDarkMode ? 'invert(1) hue-rotate(180deg) brightness(1.2)' : 'none' }}
       >
         <CrowdCanvas
@@ -319,30 +319,30 @@ const Skiper39 = ({
       <div className="absolute inset-0 pointer-events-none bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-pink-500/10 via-transparent to-transparent" />
 
       {/* Hero Foreground Content */}
-      <div className="relative z-10 max-w-5xl mx-auto px-6 py-16 sm:py-24 text-center space-y-6">
+      <div className="relative z-10 max-w-5xl mx-auto px-4 sm:px-6 py-10 sm:py-20 text-center space-y-4 sm:space-y-6">
         {/* Top Kicker Tag */}
-        <div className="inline-flex items-center gap-2 px-3.5 py-1.5 rounded-full border border-[#C2185B]/30 bg-[#FFF0F5] dark:bg-pink-950/40 text-xs font-semibold tracking-wider uppercase text-[#C2185B] dark:text-pink-300 shadow-2xs">
-          <span className="w-2 h-2 rounded-full bg-[#C2185B] animate-pulse" />
-          <span>Purpose &amp; Glow Career Solutions · Nicole Gotsch</span>
+        <div className="inline-flex items-center gap-1.5 sm:gap-2 px-3 py-1 sm:px-3.5 sm:py-1.5 rounded-full border border-[#C2185B]/30 bg-[#FFF0F5] dark:bg-pink-950/40 text-[11px] sm:text-xs font-semibold tracking-wider uppercase text-[#C2185B] dark:text-pink-300 shadow-2xs max-w-full">
+          <span className="w-1.5 h-1.5 sm:w-2 sm:h-2 rounded-full bg-[#C2185B] animate-pulse shrink-0" />
+          <span className="truncate">Purpose &amp; Glow Career Solutions · Nicole Gotsch</span>
         </div>
 
         {/* The Exact User Requested CTA */}
-        <h1 className="text-3xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight font-serif leading-[1.15] max-w-4xl mx-auto">
+        <h1 className="text-2xl sm:text-5xl lg:text-6xl font-extrabold tracking-tight font-serif leading-[1.18] sm:leading-[1.15] max-w-4xl mx-auto px-2">
           Stand out of the rest of the crowd with{" "}
-          <span className="text-[#C2185B] dark:text-pink-400 underline decoration-[#C2185B]/40 decoration-wavy decoration-2">
+          <span className="text-[#C2185B] dark:text-pink-400 underline decoration-[#C2185B]/40 decoration-wavy decoration-2 inline-block">
             Purpose &amp; Glow
           </span>
         </h1>
 
         {/* Clear Subtitle */}
-        <p className={`text-base sm:text-lg max-w-2xl mx-auto leading-relaxed ${
+        <p className={`text-sm sm:text-lg max-w-2xl mx-auto leading-relaxed px-2 ${
           isDarkMode ? "text-slate-300" : "text-slate-700 font-normal"
         }`}>
           {subText}
         </p>
 
         {/* High-Impact Actions */}
-        <div className="pt-4 flex flex-wrap items-center justify-center gap-4">
+        <div className="pt-2 sm:pt-4 flex flex-col sm:flex-row items-stretch sm:items-center justify-center gap-3 sm:gap-4 max-w-sm sm:max-w-none mx-auto w-full px-2">
           <a
             href="#contact"
             onClick={(e) => {
@@ -351,7 +351,7 @@ const Skiper39 = ({
                 onPrimaryClick();
               }
             }}
-            className="px-6 py-3.5 rounded-xl font-semibold text-sm bg-[#C2185B] hover:bg-[#9C1450] text-white transition-all shadow-md hover:shadow-lg inline-flex items-center gap-2 cursor-pointer active:scale-98"
+            className="w-full sm:w-auto min-h-[44px] px-6 py-3 rounded-xl font-semibold text-sm bg-[#C2185B] hover:bg-[#9C1450] text-white transition-all shadow-md hover:shadow-lg inline-flex items-center justify-center gap-2 cursor-pointer active:scale-98"
           >
             <span>Begin a Consultation</span>
             <svg className="w-4 h-4 fill-none stroke-currentColor stroke-2" viewBox="0 0 24 24">
@@ -367,7 +367,7 @@ const Skiper39 = ({
                 onSecondaryClick();
               }
             }}
-            className={`px-5 py-3.5 rounded-xl font-semibold text-sm border transition-all inline-flex items-center gap-2 cursor-pointer ${
+            className={`w-full sm:w-auto min-h-[44px] px-5 py-3 rounded-xl font-semibold text-sm border transition-all inline-flex items-center justify-center gap-2 cursor-pointer ${
               isDarkMode
                 ? "border-slate-700 bg-slate-900/60 hover:bg-slate-800 text-slate-200"
                 : "border-slate-300 bg-white/80 hover:bg-white text-slate-800 shadow-2xs"
@@ -378,16 +378,16 @@ const Skiper39 = ({
         </div>
 
         {/* Social Proof Strip */}
-        <div className="pt-8 border-t border-slate-200/60 dark:border-slate-800/60 flex flex-wrap items-center justify-center gap-6 sm:gap-12 text-xs">
-          <div className="flex items-center gap-1.5 font-medium">
+        <div className="pt-6 sm:pt-8 border-t border-slate-200/60 dark:border-slate-800/60 grid grid-cols-1 sm:flex sm:flex-wrap items-center justify-center gap-2.5 sm:gap-8 lg:gap-12 text-xs">
+          <div className="flex items-center justify-center gap-1.5 font-medium">
             <span className="text-[#C2185B] font-bold">12+</span>
             <span className={isDarkMode ? "text-slate-400" : "text-slate-600"}>Years Healthcare &amp; Ops Expertise</span>
           </div>
-          <div className="flex items-center gap-1.5 font-medium">
+          <div className="flex items-center justify-center gap-1.5 font-medium">
             <span className="text-[#C2185B] font-bold">24–48h</span>
             <span className={isDarkMode ? "text-slate-400" : "text-slate-600"}>Guaranteed Revamp Turnaround</span>
           </div>
-          <div className="flex items-center gap-1.5 font-medium">
+          <div className="flex items-center justify-center gap-1.5 font-medium">
             <span className="text-[#C2185B] font-bold">$50 to $239</span>
             <span className={isDarkMode ? "text-slate-400" : "text-slate-600"}>100% Transparent Flat Pricing</span>
           </div>

@@ -995,7 +995,7 @@ export default function App() {
     const newNotif: AdminNotification = {
       id: `notif-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
       title: `New Email Inquiry: ${lead.first}`,
-      subtitle: `${lead.service} · Direct message to ngotsch@outlook.com`,
+      subtitle: `${lead.service} · Direct message to purposeandglowcareers@gmail.com`,
       message: lead.note || `Client inquiry for ${lead.service}.`,
       senderName: lead.first,
       senderEmail: lead.email,
@@ -1114,22 +1114,23 @@ export default function App() {
 
   return (
     <div className={`min-h-screen flex flex-col transition-colors ${isDarkMode ? 'bg-[#0B0F19] text-slate-100 dark' : 'bg-[#F8FAFC] text-slate-900'}`}>
-      {/* Strict 3-Zone Top Bar Contract */}
-      <header className={`flex items-center justify-between gap-8 px-6 lg:px-10 py-4 border-b sticky top-0 z-30 transition-colors ${isDarkMode ? 'bg-[#121624] border-[#22283A]' : 'bg-white border-slate-200'}`}>
+      {/* Strict 3-Zone Top Bar Contract with Mobile Responsiveness */}
+      <header className={`flex flex-wrap lg:flex-nowrap items-center justify-between gap-3 lg:gap-8 px-3 sm:px-6 lg:px-10 py-2.5 sm:py-4 border-b sticky top-0 z-30 transition-colors ${isDarkMode ? 'bg-[#121624] border-[#22283A]' : 'bg-white border-slate-200'}`}>
         {/* Zone 1: Wordmark & Switch to Client Site */}
-        <div className="flex items-center gap-3 shrink-0">
+        <div className="flex items-center gap-2 sm:gap-3 shrink-0">
           <button
             type="button"
             onClick={handleLockAdmin}
-            className={`inline-flex items-center gap-1.5 px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer shadow-2xs ${
+            className={`inline-flex items-center gap-1.5 px-2.5 sm:px-3 py-1.5 text-xs font-semibold rounded-lg transition-colors cursor-pointer shadow-2xs ${
               isDarkMode
                 ? 'text-pink-300 bg-pink-950/40 hover:bg-pink-950/70 border border-pink-800/60'
                 : 'text-[#9C1450] bg-[#FFF0F5] hover:bg-[#FCE1EC] border border-[#F0C6D6]'
             }`}
             title="Lock admin session and return to public website"
           >
-            <Lock className="w-3.5 h-3.5" />
-            <span>Lock &amp; Exit Admin</span>
+            <Lock className="w-3.5 h-3.5 shrink-0" />
+            <span className="hidden sm:inline">Lock &amp; Exit Admin</span>
+            <span className="sm:hidden">Exit</span>
           </button>
           <div className={`h-4 w-px ${isDarkMode ? 'bg-slate-700' : 'bg-slate-300'}`} />
           <a
@@ -1138,17 +1139,17 @@ export default function App() {
               e.preventDefault();
               setActiveTab('feed');
             }}
-            className="text-lg font-bold tracking-tight text-slate-900 whitespace-nowrap shrink-0 flex items-center gap-2"
+            className="text-base sm:text-lg font-bold tracking-tight text-slate-900 dark:text-white whitespace-nowrap shrink-0 flex items-center gap-1.5 sm:gap-2"
           >
             <span>Purpose &amp; Glow</span>
-            <span className="text-[11px] font-mono font-semibold text-teal-800 bg-teal-100/90 px-1.5 py-0.5 rounded border border-teal-200">
-              Admin Studio
+            <span className="text-[10px] sm:text-[11px] font-mono font-semibold text-teal-800 bg-teal-100/90 dark:bg-teal-950 dark:text-teal-300 px-1.5 py-0.5 rounded border border-teal-200 dark:border-teal-800">
+              Admin
             </span>
           </a>
         </div>
 
-        {/* Zone 2: 4 concise single-line navigation links */}
-        <nav className="flex items-center gap-6 text-sm font-medium text-slate-600 overflow-x-auto">
+        {/* Zone 2: 4 concise single-line navigation links - order-3 on mobile so it sits cleanly below header row */}
+        <nav className="w-full lg:w-auto order-3 lg:order-2 flex items-center gap-4 sm:gap-6 text-sm font-medium text-slate-600 dark:text-slate-300 overflow-x-auto pb-1 pt-1 border-t lg:border-t-0 border-slate-200/50 dark:border-slate-800/50 scrollbar-none">
           <button
             type="button"
             onClick={() => {
@@ -1156,10 +1157,10 @@ export default function App() {
               setFeedFilter('all');
               handleScanICP('all');
             }}
-            className={`py-1 transition-colors whitespace-nowrap shrink-0 cursor-pointer border-b-2 ${
+            className={`py-1 transition-colors whitespace-nowrap shrink-0 cursor-pointer border-b-2 text-xs sm:text-sm ${
               activeTab === 'feed'
-                ? 'border-teal-800 text-slate-900 font-semibold'
-                : 'border-transparent hover:text-slate-900'
+                ? 'border-teal-800 dark:border-teal-400 text-slate-900 dark:text-white font-semibold'
+                : 'border-transparent hover:text-slate-900 dark:hover:text-white text-slate-500'
             }`}
           >
             Signal Feed
@@ -1167,10 +1168,10 @@ export default function App() {
           <button
             type="button"
             onClick={() => setActiveTab('qualifier')}
-            className={`py-1 transition-colors whitespace-nowrap shrink-0 cursor-pointer border-b-2 ${
+            className={`py-1 transition-colors whitespace-nowrap shrink-0 cursor-pointer border-b-2 text-xs sm:text-sm ${
               activeTab === 'qualifier'
-                ? 'border-teal-800 text-slate-900 font-semibold'
-                : 'border-transparent hover:text-slate-900'
+                ? 'border-teal-800 dark:border-teal-400 text-slate-900 dark:text-white font-semibold'
+                : 'border-transparent hover:text-slate-900 dark:hover:text-white text-slate-500'
             }`}
           >
             Live Qualifier
@@ -1178,10 +1179,10 @@ export default function App() {
           <button
             type="button"
             onClick={() => setActiveTab('keywords')}
-            className={`py-1 transition-colors whitespace-nowrap shrink-0 cursor-pointer border-b-2 ${
+            className={`py-1 transition-colors whitespace-nowrap shrink-0 cursor-pointer border-b-2 text-xs sm:text-sm ${
               activeTab === 'keywords'
-                ? 'border-teal-800 text-slate-900 font-semibold'
-                : 'border-transparent hover:text-slate-900'
+                ? 'border-teal-800 dark:border-teal-400 text-slate-900 dark:text-white font-semibold'
+                : 'border-transparent hover:text-slate-900 dark:hover:text-white text-slate-500'
             }`}
           >
             Keyword Rules
@@ -1189,10 +1190,10 @@ export default function App() {
           <button
             type="button"
             onClick={() => setActiveTab('cadence')}
-            className={`py-1 transition-colors whitespace-nowrap shrink-0 cursor-pointer border-b-2 ${
+            className={`py-1 transition-colors whitespace-nowrap shrink-0 cursor-pointer border-b-2 text-xs sm:text-sm ${
               activeTab === 'cadence'
-                ? 'border-teal-800 text-slate-900 font-semibold'
-                : 'border-transparent hover:text-slate-900'
+                ? 'border-teal-800 dark:border-teal-400 text-slate-900 dark:text-white font-semibold'
+                : 'border-transparent hover:text-slate-900 dark:hover:text-white text-slate-500'
             }`}
           >
             Capacity &amp; Boundaries
@@ -1200,7 +1201,7 @@ export default function App() {
         </nav>
 
         {/* Zone 3: Alerts, Dark Mode, Copilot, Ingest, & Auth */}
-        <div className="flex items-center gap-2.5 shrink-0">
+        <div className="order-2 lg:order-3 flex items-center gap-1.5 sm:gap-2.5 shrink-0">
           {/* Inbound Notifications Center Bell */}
           <button
             type="button"
@@ -1383,7 +1384,7 @@ export default function App() {
       )}
 
       {/* Main Content Container (1440px Desktop Baseline) */}
-      <main className="flex-1 max-w-[1400px] w-full mx-auto px-6 lg:px-10 py-8 space-y-8">
+      <main className="flex-1 max-w-[1400px] w-full mx-auto px-3 sm:px-6 lg:px-10 py-4 sm:py-8 space-y-6 sm:space-y-8">
         {/* Top Context Banner & Full-Width 4-Column KPI Strip */}
         <section className={`rounded-xl p-6 space-y-6 border transition-colors ${isDarkMode ? 'bg-[#121624] border-[#22283A] text-slate-100' : 'bg-white border-slate-200 text-slate-900'}`}>
           <div className="flex flex-col lg:flex-row lg:items-end justify-between gap-4">
@@ -2172,15 +2173,23 @@ export default function App() {
                             </span>
                           </div>
                           <span className={`font-medium ${isDarkMode ? 'text-teal-400' : 'text-teal-800'}`}>
-                            {item.status === 'new_signal'
-                              ? 'Ready to reply'
-                              : item.status === 'diagnostic_sent'
-                              ? 'Diagnostic sent'
-                              : item.status === 'diy_review_offered'
-                              ? 'DIY review sent'
-                              : item.status === 'booked_client'
-                              ? 'Booked ($)'
-                              : 'Filtered noise'}
+                            {item.status === 'new_lead' || item.status === 'new_signal'
+                              ? 'New Lead'
+                              : item.status === 'contacted' || item.status === 'diagnostic_sent'
+                              ? 'Contacted'
+                              : item.status === 'interested' || item.status === 'diy_review_offered'
+                              ? 'Interested'
+                              : item.status === 'follow_up_needed'
+                              ? 'Follow-Up Needed'
+                              : item.status === 'client' || item.status === 'booked_client'
+                              ? 'Active Client'
+                              : item.status === 'completed'
+                              ? 'Completed'
+                              : item.status === 'not_interested'
+                              ? 'Not Interested'
+                              : item.status === 'closed' || item.status === 'filtered_noise'
+                              ? 'Closed'
+                              : 'Lead'}
                           </span>
                         </div>
                       </div>
@@ -2260,11 +2269,14 @@ export default function App() {
                             : 'bg-slate-50 border-slate-200 text-slate-900 focus:border-teal-700'
                         }`}
                       >
-                        <option value="new_signal">01. New Qualified Signal</option>
-                        <option value="diagnostic_sent">02. Diagnostic Reply Sent</option>
-                        <option value="diy_review_offered">03. Free DIY Review Offered</option>
-                        <option value="booked_client">04. Booked Paying Client ($)</option>
-                        <option value="filtered_noise">05. Filtered Noise / Non-Buyer</option>
+                        <option value="new_signal">New Lead</option>
+                        <option value="contacted">Contacted</option>
+                        <option value="interested">Interested</option>
+                        <option value="follow_up_needed">Follow-Up Needed</option>
+                        <option value="booked_client">Active Client</option>
+                        <option value="completed">Completed</option>
+                        <option value="not_interested">Not Interested</option>
+                        <option value="filtered_noise">Closed</option>
                       </select>
                     </div>
                   </div>

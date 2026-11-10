@@ -328,7 +328,7 @@ export function AdminNotificationsPopover({
             <Sparkles className="w-3 h-3 text-[#C2185B]" />
             Purpose &amp; Glow Real-Time Inbound Desk
           </span>
-          <span className="font-mono text-[10px]">Recipient: ngotsch@outlook.com</span>
+          <span className="font-mono text-[10px]">Recipient: purposeandglowcareers@gmail.com</span>
         </div>
       </div>
     </div>
