@@ -79,9 +79,9 @@ export function ClientFacingSite({
 
   // Email Pop-Up Form Fill state attached to the email on the page
   const [isEmailModalOpen, setIsEmailModalOpen] = useState(false);
-  const [emailModalDefaultService, setEmailModalDefaultService] = useState('Résumé Revamp ($99)');
+  const [emailModalDefaultService, setEmailModalDefaultService] = useState('Professional Résumé Revamp — $99');
 
-  const handleOpenEmailModal = (defaultService: string = 'Résumé Revamp ($99)') => {
+  const handleOpenEmailModal = (defaultService: string = 'Professional Résumé Revamp — $99') => {
     setEmailModalDefaultService(defaultService);
     setIsEmailModalOpen(true);
   };
@@ -116,7 +116,7 @@ export function ClientFacingSite({
         urgency: 'urgent_48h'
       });
     }
-    showToast('Free assessment received! Nicole will email you shortly.');
+    showToast('Free assessment received! I will email you shortly.');
   };
 
   // Review carousel in Section 02
@@ -178,9 +178,11 @@ export function ClientFacingSite({
         { id: 'home', label: 'Home' },
         { id: 'work', label: 'Services' },
         { id: 'testimony', label: 'Client Reviews' },
-        { id: 'process', label: 'Our Process' },
+        { id: 'process', label: 'My Process' },
         { id: 'portfolio', label: 'Résumé Examples' },
         { id: 'pricing', label: 'Pricing' },
+        { id: 'faq', label: 'FAQ' },
+        { id: 'resources', label: 'Resources' },
         { id: 'contact', label: 'Contact' }
       ];
 
@@ -202,9 +204,36 @@ export function ClientFacingSite({
     return () => window.removeEventListener('scroll', handleScroll);
   }, []);
 
-  // Keyboard shortcut: Shift + C jumps directly to contact form
+  // Lock body scroll when lightbox is open & support Escape key to close overlays
+  useEffect(() => {
+    document.body.classList.toggle('lb-open', Boolean(selectedSample));
+    return () => {
+      document.body.classList.remove('lb-open');
+    };
+  }, [selectedSample]);
+
+  // Keyboard shortcut: Shift + C jumps directly to contact form, Escape closes overlays
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
+      if (e.key === 'Escape') {
+        if (selectedSample) {
+          setSelectedSample(null);
+          return;
+        }
+        if (isMobileMenuOpen) {
+          setIsMobileMenuOpen(false);
+          return;
+        }
+        if (isEmailModalOpen) {
+          setIsEmailModalOpen(false);
+          return;
+        }
+        if (isAssessmentModalOpen) {
+          setIsAssessmentModalOpen(false);
+          return;
+        }
+      }
+
       if (e.shiftKey && (e.key === 'C' || e.key === 'c')) {
         const target = e.target as HTMLElement;
         if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT')) {
@@ -223,7 +252,7 @@ export function ClientFacingSite({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, []);
+  }, [selectedSample, isMobileMenuOpen, isEmailModalOpen, isAssessmentModalOpen]);
 
   // Save shortlist & requests to localStorage
   useEffect(() => {
@@ -310,7 +339,7 @@ export function ClientFacingSite({
 
     setRequests((prev) => ({ [newId]: newRecord, ...prev }));
     setFormStatus({
-      msg: `Thank you, ${newRecord.first} — your inquiry for "${newRecord.service}" has been queued for Purpose & Glow Career Solutions at purposeandglowcareers@gmail.com. We will reply within one business day.`,
+      msg: `Thank you, ${newRecord.first} — your inquiry for "${newRecord.service}" has been received at purposeandglowcareers@gmail.com. I will reply within one business day.`,
       isErr: false
     });
 
@@ -425,7 +454,7 @@ export function ClientFacingSite({
           <nav className="nav" aria-label="Primary navigation">
             <a href="#work" aria-current={activeSectionLabel === 'Services'}>Services</a>
             <a href="#testimony" aria-current={activeSectionLabel === 'Client Reviews'}>Client Reviews</a>
-            <a href="#process" aria-current={activeSectionLabel === 'Our Process'}>Our Process</a>
+            <a href="#process" aria-current={activeSectionLabel === 'My Process'}>My Process</a>
             <a href="#portfolio" aria-current={activeSectionLabel === 'Résumé Examples'}>Résumé Examples</a>
             <a href="#pricing" aria-current={activeSectionLabel === 'Pricing'}>Pricing</a>
             <a href="#contact" aria-current={activeSectionLabel === 'Contact'}>Contact</a>
@@ -525,11 +554,13 @@ export function ClientFacingSite({
           <div className="ticks" aria-hidden="true">
             {[
               { pos: '0%', id: 'home', label: 'Home' },
-              { pos: '16.6%', id: 'work', label: 'Services' },
-              { pos: '33.3%', id: 'testimony', label: 'Client Reviews' },
-              { pos: '50.0%', id: 'process', label: 'Our Process' },
-              { pos: '66.6%', id: 'portfolio', label: 'Résumé Examples' },
-              { pos: '83.3%', id: 'pricing', label: 'Pricing' },
+              { pos: '12.5%', id: 'work', label: 'Services' },
+              { pos: '25%', id: 'testimony', label: 'Client Reviews' },
+              { pos: '37.5%', id: 'process', label: 'My Process' },
+              { pos: '50%', id: 'portfolio', label: 'Résumé Examples' },
+              { pos: '62.5%', id: 'pricing', label: 'Pricing' },
+              { pos: '75%', id: 'faq', label: 'FAQ' },
+              { pos: '87.5%', id: 'resources', label: 'Resources' },
               { pos: '100%', id: 'contact', label: 'Contact' }
             ].map((t) => (
               <a
@@ -565,7 +596,7 @@ export function ClientFacingSite({
               </li>
               <li>
                 <a href="#process" onClick={() => setIsMobileMenuOpen(false)}>
-                  Our Process
+                  My Process
                 </a>
               </li>
               <li>
@@ -579,6 +610,16 @@ export function ClientFacingSite({
                 </a>
               </li>
               <li>
+                <a href="#faq" onClick={() => setIsMobileMenuOpen(false)}>
+                  FAQ
+                </a>
+              </li>
+              <li>
+                <a href="#resources" onClick={() => setIsMobileMenuOpen(false)}>
+                  Career Resources
+                </a>
+              </li>
+              <li>
                 <a href="#contact" onClick={() => setIsMobileMenuOpen(false)}>
                   Contact
                 </a>
@@ -589,7 +630,7 @@ export function ClientFacingSite({
                   target="_blank"
                   rel="noopener noreferrer"
                   onClick={() => setIsMobileMenuOpen(false)}
-                  style={{ color: '#F06292', fontWeight: 700 }}
+                  style={{ color: 'var(--red)', fontWeight: 700 }}
                 >
                   Free Job Search Registration <span>Tally ↗</span>
                 </a>
@@ -620,7 +661,7 @@ export function ClientFacingSite({
                     setIsMobileMenuOpen(false);
                     onOpenAdmin();
                   }}
-                  style={{ width: '100%', textAlign: 'left', display: 'flex', justifyContent: 'space-between', padding: '14px 0', borderBottom: '1px solid var(--hair)' }}
+                  style={{ width: '100%', textAlign: 'left', display: 'flex', justifyContent: 'space-between', alignItems: 'center', padding: '14px 0', borderBottom: '1px solid var(--hair)', color: 'var(--ink)' }}
                 >
                   <span style={{ fontFamily: 'var(--serif-d)', fontSize: '20px', fontWeight: 600 }}>Admin Area</span>
                   <span style={{ fontFamily: 'var(--sans)', fontSize: '12px', color: 'var(--red)', fontWeight: 600 }}>Backend Studio</span>
@@ -670,7 +711,7 @@ export function ClientFacingSite({
               <aside className="hero-aside">
                 <dl>
                   <div>
-                    <dt>Our Purpose</dt>
+                    <dt>My Purpose</dt>
                     <dd>Helping you recognize the skills and accomplishments you already have, and presenting them with confidence.</dd>
                   </div>
                   <div>
@@ -727,12 +768,12 @@ export function ClientFacingSite({
                   </div>
                 </div>
 
-                {/* Hero Call to Action Buttons - 4 Prominent CTAs */}
+                {/* Hero Call to Action Buttons - 5 Prominent CTAs */}
                 <div className="hero-cta">
-                  <div className="hero-cta-buttons" style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
-                    {/* CTA 1: Explore Our Services */}
+                  <div className="hero-cta-buttons">
+                    {/* CTA 1: Explore My Services */}
                     <a href="#work" className="btn-ink">
-                      <span>Explore Our Services</span>
+                      <span>Explore My Services</span>
                       <ArrowRight style={{ width: '14px', height: '14px' }} />
                     </a>
 
@@ -752,9 +793,9 @@ export function ClientFacingSite({
                       <span>Free Career &amp; Résumé Assessment</span>
                     </button>
 
-                    {/* CTA 3: View Our Work */}
+                    {/* CTA 3: View My Work */}
                     <a href="#portfolio" className="btn-line">
-                      <span>View Our Work</span>
+                      <span>View My Work</span>
                     </a>
 
                     {/* CTA 4: Book a Free Consultation */}
@@ -782,6 +823,9 @@ export function ClientFacingSite({
                       <ExternalLink style={{ width: '12px', height: '12px', opacity: 0.8 }} />
                     </a>
                   </div>
+                  <p style={{ fontSize: '12px', color: 'var(--ink-3)', maxWidth: '56ch', marginTop: '4px' }}>
+                    Initial résumé feedback, DIY recommendations, and job search registration are free ($0). Personalized writing services are paid, and free guidance does not guarantee interviews or job placement.
+                  </p>
                   <small>
                     Press <kbd>Shift</kbd> + <kbd>C</kbd> to jump straight to consultation inquiries
                   </small>
@@ -934,10 +978,205 @@ export function ClientFacingSite({
                   </div>
                 </details>
 
-                {/* 4. Free DIY Résumé Recommendations */}
+                {/* 4. Cover Letter */}
                 <details>
                   <summary>
-                    <span className="nm">Free DIY Résumé Recommendations</span>
+                    <span className="nm">Cover Letter</span>
+                    <span className="pr num">$49</span>
+                    <svg className="pm" viewBox="0 0 18 18" aria-hidden="true">
+                      <line x1="2" y1="9" x2="16" y2="9" />
+                      <line x1="9" y1="2" x2="9" y2="16" className="v" />
+                    </svg>
+                  </summary>
+                  <div className="body">
+                    <p>
+                      Written specifically for one target position to highlight your relevant qualifications, motivation, and value to the hiring team.
+                    </p>
+                    <ul>
+                      <li>Customized for one target role and employer</li>
+                      <li>Delivered in Microsoft Word (.docx) and PDF</li>
+                      <li>Includes one round of revisions</li>
+                      <li>24–48 business hour turnaround</li>
+                    </ul>
+                    <div className="svc-actions">
+                      <button
+                        type="button"
+                        onClick={() => handleSelectService('Targeted Cover Letter — $49')}
+                        className="btn-ink"
+                      >
+                        Select Cover Letter ($49) →
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEmailModal('Targeted Cover Letter — $49')}
+                        className="btn-line"
+                      >
+                        Ask a Question
+                      </button>
+                    </div>
+                  </div>
+                </details>
+
+                {/* 5. Résumé Tailoring */}
+                <details>
+                  <summary>
+                    <span className="nm">Résumé Tailoring</span>
+                    <span className="pr num">$45</span>
+                    <svg className="pm" viewBox="0 0 18 18" aria-hidden="true">
+                      <line x1="2" y1="9" x2="16" y2="9" />
+                      <line x1="9" y1="2" x2="9" y2="16" className="v" />
+                    </svg>
+                  </summary>
+                  <div className="body">
+                    <p>
+                      Focused polishing and keyword optimization of your existing résumé to align directly with a single, specific job posting.
+                    </p>
+                    <ul>
+                      <li>Targeted alignment to one specific job description</li>
+                      <li>Refined summary and experience phrasing</li>
+                      <li>Delivered in editable Word (.docx) and PDF</li>
+                      <li>24–48 business hour turnaround</li>
+                    </ul>
+                    <div className="svc-actions">
+                      <button
+                        type="button"
+                        onClick={() => handleSelectService('Job-Specific Résumé Tailoring — $45')}
+                        className="btn-ink"
+                      >
+                        Select Tailoring ($45) →
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEmailModal('Job-Specific Résumé Tailoring — $45')}
+                        className="btn-line"
+                      >
+                        Ask a Question
+                      </button>
+                    </div>
+                  </div>
+                </details>
+
+                {/* 6. Interview Preparation */}
+                <details>
+                  <summary>
+                    <span className="nm">Interview Preparation</span>
+                    <span className="pr num">$65</span>
+                    <svg className="pm" viewBox="0 0 18 18" aria-hidden="true">
+                      <line x1="2" y1="9" x2="16" y2="9" />
+                      <line x1="9" y1="2" x2="9" y2="16" className="v" />
+                    </svg>
+                  </summary>
+                  <div className="body">
+                    <p>
+                      A 45-minute 1-on-1 Google Meet session paired with a brief written preparation guide covering common questions, strategy, and confident communication.
+                    </p>
+                    <ul>
+                      <li>45-minute 1-on-1 session via Google Meet</li>
+                      <li>Brief written interview preparation guide</li>
+                      <li>STAR behavioral answer practice</li>
+                      <li>Constructive communication feedback</li>
+                    </ul>
+                    <div className="svc-actions">
+                      <button
+                        type="button"
+                        onClick={() => handleSelectService('Interview Preparation Session — $65')}
+                        className="btn-ink"
+                      >
+                        Select Interview Prep ($65) →
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEmailModal('Interview Preparation Session — $65')}
+                        className="btn-line"
+                      >
+                        Ask a Question
+                      </button>
+                    </div>
+                  </div>
+                </details>
+
+                {/* 7. Career Ready Package */}
+                <details>
+                  <summary>
+                    <span className="nm">Career Ready Package</span>
+                    <span className="pr num">$189</span>
+                    <svg className="pm" viewBox="0 0 18 18" aria-hidden="true">
+                      <line x1="2" y1="9" x2="16" y2="9" />
+                      <line x1="9" y1="2" x2="9" y2="16" className="v" />
+                    </svg>
+                  </summary>
+                  <div className="body">
+                    <p>
+                      Designed for clients updating an existing résumé who want complete application and interview readiness in one bundle.
+                    </p>
+                    <ul>
+                      <li>Professional Résumé Revamp ($99 value)</li>
+                      <li>Custom Cover Letter ($49 value)</li>
+                      <li>45-minute Interview Preparation session + guide ($65 value)</li>
+                      <li>Word (.docx) + PDF deliverables in 3–5 business days</li>
+                    </ul>
+                    <div className="svc-actions">
+                      <button
+                        type="button"
+                        onClick={() => handleSelectService('Career Ready Package — $189')}
+                        className="btn-ink"
+                      >
+                        Select Career Ready ($189) →
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEmailModal('Career Ready Package — $189')}
+                        className="btn-line"
+                      >
+                        Ask a Question
+                      </button>
+                    </div>
+                  </div>
+                </details>
+
+                {/* 8. Fresh Start Package */}
+                <details>
+                  <summary>
+                    <span className="nm">Fresh Start Package</span>
+                    <span className="pr num">$239</span>
+                    <svg className="pm" viewBox="0 0 18 18" aria-hidden="true">
+                      <line x1="2" y1="9" x2="16" y2="9" />
+                      <line x1="9" y1="2" x2="9" y2="16" className="v" />
+                    </svg>
+                  </summary>
+                  <div className="body">
+                    <p>
+                      Designed for clients starting from scratch who want a brand-new résumé, custom cover letter, and 1-on-1 interview preparation.
+                    </p>
+                    <ul>
+                      <li>Résumé Created From Scratch ($145 value)</li>
+                      <li>Custom Cover Letter ($49 value)</li>
+                      <li>45-minute Interview Preparation session + guide ($65 value)</li>
+                      <li>Word (.docx) + PDF deliverables in 3–5 business days</li>
+                    </ul>
+                    <div className="svc-actions">
+                      <button
+                        type="button"
+                        onClick={() => handleSelectService('Fresh Start Package — $239')}
+                        className="btn-ink"
+                      >
+                        Select Fresh Start ($239) →
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => handleOpenEmailModal('Fresh Start Package — $239')}
+                        className="btn-line"
+                      >
+                        Ask a Question
+                      </button>
+                    </div>
+                  </div>
+                </details>
+
+                {/* 9. Free DIY Résumé Recommendations */}
+                <details>
+                  <summary>
+                    <span className="nm">Free DIY Résumé Recommendations &amp; Assessment</span>
                     <span className="pr free num">$0</span>
                     <svg className="pm" viewBox="0 0 18 18" aria-hidden="true">
                       <line x1="2" y1="9" x2="16" y2="9" />
@@ -946,19 +1185,35 @@ export function ClientFacingSite({
                   </summary>
                   <div className="body">
                     <p>
-                      I personally review résumés and offer recommendations for people who would rather make the changes themselves. There’s no obligation to purchase anything.
+                      I personally review résumés and offer complimentary recommendations for people who would rather make updates themselves. Job search registration and initial feedback are free and carry no obligation to purchase paid services or guarantee employment outcomes.
                     </p>
                     <ul>
                       <li>Actionable formatting and alignment suggestions</li>
                       <li>Honest feedback on bullet wording and clarity</li>
+                      <li>Free Job Search Registration via Tally</li>
                       <li>Zero sales pressure or mandatory follow-ups</li>
                     </ul>
                     <div className="svc-actions">
-                      <a
-                        href="mailto:purposeandglowcareers@gmail.com?subject=Free%20DIY%20Résumé%20Recommendations%20Request"
+                      <button
+                        type="button"
+                        onClick={() => setIsAssessmentModalOpen(true)}
                         className="btn-ink"
                       >
-                        Request Free Recommendations →
+                        Free Assessment Form ($0) →
+                      </button>
+                      <a
+                        href="https://tally.so/r/q5a1RY"
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn-line"
+                      >
+                        <span>Job Search Registration (Tally) ↗</span>
+                      </a>
+                      <a
+                        href="mailto:purposeandglowcareers@gmail.com?subject=Free%20DIY%20Résumé%20Recommendations%20Request"
+                        className="btn-line"
+                      >
+                        Email Request →
                       </a>
                     </div>
                   </div>
@@ -1082,7 +1337,7 @@ export function ClientFacingSite({
               </div>
               <figcaption>
                 <b>Proof of Craft</b>
-                <span>Clean typographic hierarchy, quantified contributions, and 100% ATS parser fidelity.</span>
+                <span>Professional presentation-style résumé featuring a polished layout, organized accomplishments, and a design that highlights the client’s experience. Ideal for direct sharing and professional presentation.</span>
               </figcaption>
             </figure>
 
@@ -1090,7 +1345,7 @@ export function ClientFacingSite({
             <div>
               <div className="sh">
                 <p className="label red">
-                  <span>Our Process</span>
+                  <span>My Process</span>
                   <span>Collaborative Cadence</span>
                 </p>
                 <h2 id="procTitle">
@@ -1127,7 +1382,7 @@ export function ClientFacingSite({
                   <span className="n">01</span>
                   <div>
                     <h3>Discovery &amp; Consultation</h3>
-                    <p>We review your target job listings, work history, and the specific opportunities you want to unlock.</p>
+                    <p>I review your target job listings, work history, and the specific opportunities you want to unlock.</p>
                     <span className="when">Free 15-Min Intro or Intake Note</span>
                   </div>
                 </li>
@@ -1143,7 +1398,7 @@ export function ClientFacingSite({
                   <span className="n">03</span>
                   <div>
                     <h3>Collaborative Revisions</h3>
-                    <p>You review the draft line by line. We adjust wording, alignment, and emphasis until it feels 100% authentically you.</p>
+                    <p>You review the draft line by line, and I adjust wording, alignment, and emphasis until it feels 100% authentically you.</p>
                     <span className="when">Feedback &amp; Iteration</span>
                   </div>
                 </li>
@@ -1172,7 +1427,7 @@ export function ClientFacingSite({
                 Real Client <em>Résumé Examples</em>
               </h2>
               <p>
-                Here’s a look at some of the résumés created for clients across different industries and experience levels. Each one is tailored to the person’s background and career goals.
+                Here’s a look at some of the résumés I’ve created for clients across different industries and experience levels. This portfolio includes both <strong>ATS-friendly résumés</strong> formatted for online application systems, and <strong>professionally designed presentation-style PDFs</strong> intended for direct sharing with hiring managers, networking, and interviews.
               </p>
             </div>
 
@@ -1202,7 +1457,7 @@ export function ClientFacingSite({
 
             <div className="pf-meta">
               <span>Showing <strong>{visibleSamples.length}</strong> of {OBSIDIAN_SAMPLES.length} genuine work samples</span>
-              <span>All samples anonymized · Genuine layout and content</span>
+              <span>Clearly categorized: ATS-friendly for online job portals · Presentation-style PDFs for direct sharing</span>
             </div>
 
             {/* Structured Portfolio Rows */}
@@ -1213,7 +1468,20 @@ export function ClientFacingSite({
                   <article key={sample.id} className="pf-row" role="article">
                     <div className="pf-no">{String(idx + 1).padStart(2, '0')}</div>
                     <div className="pf-main">
-                      <span className="pf-cat">{sample.cl}</span>
+                      <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '4px' }}>
+                        <span className="pf-cat">{sample.cl}</span>
+                        <span
+                          style={{
+                            fontSize: '11px',
+                            fontWeight: 700,
+                            color: sample.st === 'ats'
+                              ? (isDarkMode ? '#34D399' : '#047857')
+                              : (isDarkMode ? '#F472B6' : '#9C1450')
+                          }}
+                        >
+                          {sample.st === 'ats' ? '• ATS-Friendly (Online Applications)' : '• Presentation-Style PDF (Direct Sharing)'}
+                        </span>
+                      </div>
                       <h3>{sample.t}</h3>
                       <p>{sample.d}</p>
                     </div>
@@ -1296,6 +1564,46 @@ export function ClientFacingSite({
             <p className="plates-hint">
               <span className="num">09</span> authentic résumé specimens · Click any plate to inspect typography and structure
             </p>
+
+            {/* Transparent Portfolio Format & Template Availability Callout */}
+            <div
+              style={{
+                marginTop: '24px',
+                padding: '18px 20px',
+                border: '1px solid var(--hair)',
+                borderLeft: '3px solid var(--red)',
+                background: 'var(--paper-2)',
+                display: 'flex',
+                flexWrap: 'wrap',
+                alignItems: 'center',
+                justifyContent: 'space-between',
+                gap: '14px'
+              }}
+            >
+              <div style={{ maxWidth: '68ch' }}>
+                <p className="label red" style={{ marginBottom: '4px' }}>Format Distinction &amp; Custom Deliverables</p>
+                <p style={{ fontSize: '14px', color: 'var(--ink-2)', lineHeight: 1.55 }}>
+                  Every custom résumé service includes an editable Microsoft Word (<strong>.docx</strong>) file formatted for online ATS applications alongside a clean <strong>PDF</strong>. Presentation-style PDFs shown above are intended for direct sharing and are not guaranteed for automated ATS parsers. Standalone DIY downloadable templates are not sold directly on this site—request{' '}
+                  <button
+                    type="button"
+                    onClick={() => setIsAssessmentModalOpen(true)}
+                    className="ul"
+                    style={{ fontWeight: 600 }}
+                  >
+                    Free DIY Recommendations
+                  </button>{' '}
+                  for format guidance tailored to your background.
+                </p>
+              </div>
+              <button
+                type="button"
+                onClick={() => setIsAssessmentModalOpen(true)}
+                className="btn-line"
+                style={{ fontSize: '13px', padding: '9px 14px' }}
+              >
+                Request Free Format Review →
+              </button>
+            </div>
           </div>
         </section>
 
@@ -1560,7 +1868,7 @@ export function ClientFacingSite({
                   <span>Interview Prep Session</span>
                   <span className="num">$65</span>
                 </b>
-                <p>45-minute 1-on-1 mock interview via Google Meet with custom follow-up preparation guide.</p>
+                <p>45-minute 1-on-1 Google Meet session paired with a brief written interview preparation guide.</p>
                 <button
                   type="button"
                   onClick={() => handleSelectService('Interview Preparation Session — $65')}
@@ -1576,7 +1884,7 @@ export function ClientFacingSite({
                   <span>DIY Recommendations</span>
                   <span>$0 Free</span>
                 </b>
-                <p>Diagnostic review with constructive feedback for job seekers making changes themselves.</p>
+                <p>Complimentary résumé feedback with practical recommendations for job seekers updating on their own.</p>
                 <button
                   type="button"
                   onClick={() => setIsAssessmentModalOpen(true)}
@@ -1723,7 +2031,7 @@ export function ClientFacingSite({
                 <p className="label red">Direct Consultation Request</p>
                 <h3 id="contactTitle">Tell me about your target role.</h3>
                 <p>
-                  Fill out this brief inquiry and Purpose &amp; Glow will reply within one business day at purposeandglowcareers@gmail.com.
+                  Fill out this brief inquiry and I will personally reply within one business day at purposeandglowcareers@gmail.com.
                 </p>
 
                 <div className="fields">
@@ -1864,8 +2172,10 @@ export function ClientFacingSite({
               <ul>
                 <li><a href="#work" className="ul">Featured Services</a></li>
                 <li><a href="#testimony" className="ul">Client Reviews</a></li>
-                <li><a href="#portfolio" className="ul">Résumé Portfolio</a></li>
+                <li><a href="#portfolio" className="ul">Résumé Examples</a></li>
                 <li><a href="#pricing" className="ul">Services &amp; Pricing</a></li>
+                <li><a href="#faq" className="ul">FAQ</a></li>
+                <li><a href="#resources" className="ul">Career Resources</a></li>
                 <li><a href="#contact" className="ul">Contact &amp; Consultations</a></li>
               </ul>
             </div>
@@ -1880,6 +2190,16 @@ export function ClientFacingSite({
                 </li>
                 <li>Minnesota | Remote Services Nationwide</li>
                 <li>Hours: Mon–Fri 8am–6pm CT</li>
+                <li>
+                  <a
+                    href="https://tally.so/r/q5a1RY"
+                    target="_blank"
+                    rel="noopener noreferrer"
+                    className="ul"
+                  >
+                    Free Job Search Registration (Tally) ↗
+                  </a>
+                </li>
                 <li>
                   <a
                     href="https://calendly.com/purposeandglowcareers/career-consultation"
@@ -1957,9 +2277,30 @@ export function ClientFacingSite({
 
             {/* Body & Strategy breakdown */}
             <div className="lb-body">
-              <span className="label red">Specimen Analysis · {selectedSample.cl}</span>
+              <div style={{ display: 'flex', alignItems: 'center', gap: '8px', flexWrap: 'wrap', marginBottom: '8px' }}>
+                <span className="label red">Specimen Analysis · {selectedSample.cl}</span>
+                <span
+                  style={{
+                    fontSize: '11px',
+                    fontWeight: 700,
+                    padding: '2px 8px',
+                    borderRadius: '4px',
+                    background: selectedSample.st === 'ats' ? 'rgba(16, 185, 129, 0.14)' : 'rgba(194, 24, 91, 0.12)',
+                    color: selectedSample.st === 'ats'
+                      ? (isDarkMode ? '#34D399' : '#047857')
+                      : (isDarkMode ? '#F472B6' : '#9C1450')
+                  }}
+                >
+                  {selectedSample.st === 'ats' ? 'ATS-Friendly (Online Applications)' : 'Presentation-Style PDF (Direct Sharing)'}
+                </span>
+              </div>
               <h2 id="lbTitle">{selectedSample.t}</h2>
               <p className="desc">{selectedSample.d}</p>
+              <p style={{ fontSize: '11px', opacity: 0.75, fontStyle: 'italic', marginTop: '6px', marginBottom: '12px' }}>
+                {selectedSample.st === 'ats'
+                  ? 'Format Note: Designed with standard single-column structure for online applicant tracking systems.'
+                  : 'Format Note: Designed with visual layout and presentation styling for direct emailing and executive review (not guaranteed for automated ATS parsers).'}
+              </p>
 
               <blockquote>
                 “{selectedSample.q}”

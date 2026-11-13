@@ -65,12 +65,12 @@ const PRICING_PACKAGES = [
     turnaround: '3–5 Business Days',
     popular: false,
     tag: 'Complete Bundle',
-    target: 'Applicants seeking end-to-end application readiness',
+    target: 'Applicants updating an existing résumé who want full interview readiness',
     bullets: [
-      'Includes Full Résumé Revamp ($99 value)',
-      'Targeted, matching Cover Letter ($49 value)',
-      '1-on-1 Interview Coaching Session ($65 value)',
-      'Cohesive typography and layout across all documents'
+      'Includes Professional Résumé Revamp ($99 value)',
+      'Custom Cover Letter tailored to a target role ($49 value)',
+      '45-minute Google Meet Interview Prep + written guide ($65 value)',
+      'Cohesive formatting delivered in Word (.docx) & PDF'
     ],
     serviceId: 'Career Ready Package — $189'
   },
@@ -80,13 +80,13 @@ const PRICING_PACKAGES = [
     price: '$239',
     turnaround: '3–5 Business Days',
     popular: false,
-    tag: 'Executive Re-entry Bundle',
-    target: 'Complete strategic overhaul for major career shifts',
+    tag: 'From-Scratch Bundle',
+    target: 'Clients starting from scratch who want complete application and interview support',
     bullets: [
       'Includes Résumé Created From Scratch ($145 value)',
-      'Targeted Cover Letter & Narrative Framing ($49 value)',
-      '1-on-1 Interview Strategy & STAR Practice ($65 value)',
-      'Ongoing revision support until launch'
+      'Custom Cover Letter tailored to a target role ($49 value)',
+      '45-minute Google Meet Interview Prep + written guide ($65 value)',
+      'Delivered in editable Word (.docx) and high-res PDF'
     ],
     serviceId: 'Fresh Start Package — $239'
   },
@@ -97,29 +97,44 @@ const PRICING_PACKAGES = [
     turnaround: 'Flexible Scheduling',
     popular: false,
     tag: 'Coaching',
-    target: 'Job seekers with upcoming interviews needing practice',
+    target: 'Job seekers with upcoming interviews needing structured practice',
     bullets: [
-      '1-on-1 personalized mock interview session',
-      'Master the STAR behavioral answer technique',
-      'Constructive feedback on pacing, body language, and tone',
-      'Follow-up talking points cheat sheet'
+      '45-minute 1-on-1 interview preparation session via Google Meet',
+      'Brief written preparation guide covering common questions & strategy',
+      'Practice structuring clear, confident STAR responses',
+      'Constructive, encouraging communication feedback'
     ],
     serviceId: 'Interview Preparation Session — $65'
   },
   {
     id: 'cover-letter',
-    name: 'Targeted Cover Letter',
+    name: 'Cover Letter',
     price: '$49',
     turnaround: '24–48 Business Hours',
     popular: false,
     tag: 'Add-on',
-    target: 'Candidates wanting a persuasive opening letter',
+    target: 'Candidates wanting a role-specific opening letter',
     bullets: [
-      'Customized to a specific target employer and role',
-      'Highlights your motivation and core value proposition',
-      'Matches your résumé branding and typography'
+      'Written specifically for one target position and company',
+      'Highlights relevant qualifications and motivation',
+      'Includes Microsoft Word (.docx), PDF, and one round of revisions'
     ],
     serviceId: 'Targeted Cover Letter — $49'
+  },
+  {
+    id: 'tailoring',
+    name: 'Résumé Tailoring',
+    price: '$45',
+    turnaround: '24–48 Business Hours',
+    popular: false,
+    tag: 'Job-Specific',
+    target: 'Clients polishing an existing résumé for one specific job posting',
+    bullets: [
+      'Optimizes wording and keyword alignment for a target job description',
+      'Refines summary and bullets to emphasize matching qualifications',
+      'Delivered in editable Word (.docx) and PDF'
+    ],
+    serviceId: 'Job-Specific Résumé Tailoring — $45'
   },
   {
     id: 'diy',
@@ -130,9 +145,9 @@ const PRICING_PACKAGES = [
     tag: '100% Free · No Obligation',
     target: 'Anyone who prefers to edit their own résumé',
     bullets: [
-      '3 actionable recommendations identifying key résumé improvements',
-      'ATS vulnerability checklist review',
-      'Zero high-pressure sales calls or hidden conditions'
+      'Honest recommendations identifying key résumé improvements',
+      'Practical formatting and clarity guidance you can apply yourself',
+      'Zero obligation to purchase paid services'
     ],
     serviceId: 'Free DIY Résumé Recommendations'
   }
@@ -159,7 +174,7 @@ export function MobilePricingCards({
           }`}
         >
           {pkg.popular && (
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-gradient-to-r from-[#C2185B] to-[#9C1450] text-white text-[11px] font-bold tracking-wider uppercase shadow-md flex items-center gap-1">
+            <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-gradient-to-r from-[#C2185B] to-[#9C1450] text-white text-[11px] font-bold tracking-wider uppercase shadow-md flex items-center gap-1 whitespace-nowrap">
               <Star className="w-3 h-3 fill-white" />
               <span>{pkg.tag}</span>
             </div>
@@ -169,7 +184,7 @@ export function MobilePricingCards({
             <div className="flex items-start justify-between gap-2">
               <div>
                 {!pkg.popular && (
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-pink-500 px-2 py-0.5 rounded bg-pink-500/10">
+                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#9C1450] dark:text-pink-400 px-2 py-0.5 rounded bg-pink-500/10">
                     {pkg.tag}
                   </span>
                 )}
@@ -177,7 +192,7 @@ export function MobilePricingCards({
                   {pkg.name}
                 </h3>
               </div>
-              <div className="text-right">
+              <div className="text-right shrink-0">
                 <div className="text-2xl font-extrabold text-[#C2185B] dark:text-pink-400">
                   {pkg.price}
                 </div>

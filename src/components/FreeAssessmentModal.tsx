@@ -84,7 +84,7 @@ export function FreeAssessmentModal({
       return;
     }
     if (!email.trim() || !email.includes('@')) {
-      setErrorMessage('Please provide a valid email address so we can send your assessment.');
+      setErrorMessage('Please provide a valid email address so I can send your assessment.');
       return;
     }
     if (!currentTitle.trim()) {
@@ -241,7 +241,7 @@ export function FreeAssessmentModal({
                 </div>
               </div>
               <p className="text-xs opacity-70">
-                Purpose &amp; Glow will personally review your background and send your free recommendations with actionable résumé suggestions.
+                I will personally review your background and send your free recommendations with actionable résumé suggestions.
               </p>
               <div className="pt-3 flex flex-wrap gap-3 justify-center">
                 <button
@@ -263,7 +263,7 @@ export function FreeAssessmentModal({
               >
                 <Compass className="w-5 h-5 text-pink-500 shrink-0 mt-0.5" />
                 <div>
-                  <strong className="font-semibold">How Purpose &amp; Glow reviews your submission:</strong> You will receive direct, private feedback identifying key areas for improvement, ATS formatting considerations, and practical next steps. No spam, no sales pressure.
+                  <strong className="font-semibold">Complimentary Feedback &amp; Honest Expectations:</strong> Your initial feedback, career recommendations, and job search registration guidance are 100% free with no obligation. Paid résumé writing and coaching services are optional and quoted transparently. Free reviews provide guidance only and do not guarantee interviews, employment, or job placement.
                 </div>
               </div>
 
@@ -486,7 +486,7 @@ export function FreeAssessmentModal({
                 <div className="space-y-3.5">
                   <div>
                     <label className="block text-xs font-semibold mb-1">
-                      LinkedIn URL <span className="text-xs opacity-60">(Optional, helps us review your work history)</span>
+                      LinkedIn URL <span className="text-xs opacity-60">(Optional, helps me review your work history)</span>
                     </label>
                     <input
                       type="url"
@@ -510,20 +510,21 @@ export function FreeAssessmentModal({
                         isDarkMode ? 'bg-slate-900 border-slate-700 text-white' : 'bg-slate-50 border-slate-300 text-slate-900'
                       }`}
                     >
-                      <option value="Free DIY Recommendations ($0) — 3 Core Pointers">Free DIY Résumé Recommendations ($0) — 3 Diagnostic Pointers</option>
+                      <option value="Free DIY Recommendations ($0) — 3 Core Pointers">Free DIY Résumé Recommendations ($0) — 3 Actionable Pointers</option>
                       <option value="Résumé Revamp ($99) — Modern ATS Optimization">Résumé Revamp ($99) — Modern ATS Optimization (Most Popular)</option>
                       <option value="Résumé From Scratch ($145) — In-Depth 8-15+ Year Career Pivot">Résumé From Scratch ($145) — In-Depth 8-15+ Year Career Pivot</option>
-                      <option value="Student Résumé ($50) — New Graduates & Entry-Level">Student Résumé ($50) — New Graduates & Entry-Level</option>
-                      <option value="Career Ready Package ($189) — Résumé + Cover Letter + Prep">Career Ready Package ($189) — Résumé + Cover Letter + Prep</option>
-                      <option value="Fresh Start Package ($239) — Complete Strategic Overhaul">Fresh Start Package ($239) — Complete Strategic Overhaul</option>
-                      <option value="Cover Letter ($49) or Résumé Tailoring ($45)">Targeted Cover Letter ($49) or Tailoring ($45)</option>
-                      <option value="Interview Preparation ($65) — 1-on-1 Practice">Interview Preparation ($65) — 1-on-1 Practice</option>
+                      <option value="Student Résumé ($50) — New Graduates & Entry-Level">Student Résumé ($50) — New Graduates &amp; Entry-Level</option>
+                      <option value="Targeted Cover Letter ($49) — Custom Role-Specific">Targeted Cover Letter ($49) — Custom Role-Specific</option>
+                      <option value="Job-Specific Résumé Tailoring ($45) — Single Posting Optimization">Job-Specific Résumé Tailoring ($45) — Single Posting Optimization</option>
+                      <option value="Interview Preparation ($65) — 1-on-1 Practice">Interview Preparation ($65) — 45-Min Session &amp; Guide</option>
+                      <option value="Career Ready Package ($189) — Résumé + Cover Letter + Prep">Career Ready Package ($189) — Revamp + Cover Letter + Prep</option>
+                      <option value="Fresh Start Package ($239) — Complete Career Bundle">Fresh Start Package ($239) — From Scratch + Cover Letter + Prep</option>
                     </select>
                   </div>
 
                   <div>
                     <label className="block text-xs font-semibold mb-1">
-                      Tell Nicole about your current situation or paste your current bullet points
+                      Tell me about your current situation or paste your current bullet points
                     </label>
                     <textarea
                       rows={3}

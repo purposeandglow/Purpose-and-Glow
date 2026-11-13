@@ -44,8 +44,14 @@ const STEPS: QuestionStep[] = [
         match: 'scratch'
       },
       {
-        label: 'Need interview confidence & 1-on-1 coaching',
-        description: 'Getting callbacks or have interviews lined up, but nervous about behavioral questions.',
+        label: 'Need a Cover Letter ($49) or Job-Specific Résumé Tailoring ($45)',
+        description: 'Already have a solid résumé and want to target one specific job posting.',
+        tag: 'Targeted Add-On',
+        match: 'tailor'
+      },
+      {
+        label: 'Need interview confidence & 1-on-1 preparation',
+        description: 'Getting callbacks or have interviews lined up, and want structured practice.',
         tag: 'Interview Prep',
         match: 'interview'
       },
@@ -144,7 +150,7 @@ export function FindYourServiceGuide({
       features: [
         'Translates coursework, clinical rotations, and internships into hireable skills',
         'Clean, modern layout that highlights academic and hands-on preparation',
-        'Direct consultation with Nicole to highlight leadership and volunteer impact',
+        'Direct 1-on-1 consultation with me to highlight leadership and volunteer impact',
         'Delivered in editable Word (.docx) and presentation-ready PDF'
       ],
       serviceId: 'Student & Early Career Résumé — $50'
@@ -165,19 +171,35 @@ export function FindYourServiceGuide({
       ],
       serviceId: 'Created From Scratch — $145'
     };
+  } else if (q1 === 'tailor') {
+    recommendation = {
+      title: 'Job-Specific Résumé Tailoring or Cover Letter',
+      price: '$45–$49',
+      badge: 'Targeted Application Support',
+      timeframe: '24–48 Business Hours',
+      description:
+        'Polish your existing résumé for one specific job posting ($45) or pair your application with a custom Cover Letter ($49) written specifically for the role.',
+      features: [
+        'Aligns your wording and keywords directly to one target job posting',
+        'Custom Cover Letter includes Word (.docx), PDF, and one round of revisions',
+        'Clean, focused presentation tailored to the employer',
+        'Fast 24–48 business hour turnaround'
+      ],
+      serviceId: 'Job-Specific Résumé Tailoring — $45'
+    };
   } else if (q1 === 'interview' || q2 === 'prep') {
     recommendation = {
       title: 'Interview Preparation Session',
       price: '$65',
       badge: 'Confidence & Strategy Coaching',
-      timeframe: 'Flexible Scheduling',
+      timeframe: '45-Min Google Meet + Guide',
       description:
-        '1-on-1 personalized interview coaching focusing on high-impact responses, salary conversations, and structured STAR story articulation.',
+        'A 45-minute 1-on-1 Google Meet interview preparation session paired with a brief written preparation guide covering common questions, strategy, and confident communication.',
       features: [
-        'Practice real behavioral and situational interview questions',
-        'Master the "Tell me about yourself" opener with confidence and poise',
-        'Constructive, encouraging feedback on body language, pacing, and tone',
-        'Personalized follow-up notes and key question talking points'
+        '45-minute live 1-on-1 session via Google Meet',
+        'Brief written preparation guide for post-session review',
+        'Master the "Tell me about yourself" opener and STAR answers',
+        'Constructive, encouraging communication feedback'
       ],
       serviceId: 'Interview Preparation Session — $65'
     };
@@ -188,10 +210,10 @@ export function FindYourServiceGuide({
       badge: 'Zero Obligation Free Review',
       timeframe: '24–48 Business Hours',
       description:
-        'Get 3 actionable recommendations highlighting your résumé’s strongest achievements and formatting improvements so you can update it yourself.',
+        'Get actionable recommendations highlighting your résumé’s strongest achievements and formatting improvements so you can update it yourself.',
       features: [
         'Confidential human review with specific bullet improvement examples',
-        'Identifies what hiring managers scan for in the first 6 seconds',
+        'Identifies what hiring managers scan for in the first few seconds',
         'Zero high-pressure sales pitches or spam follow-ups',
         'Free to implement on your own schedule'
       ],
@@ -232,7 +254,7 @@ export function FindYourServiceGuide({
               <span>Start Over</span>
             </button>
           )}
-          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-pink-500/10 text-pink-500 border border-pink-500/20">
+          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-pink-500/10 text-[#9C1450] dark:text-pink-400 border border-pink-500/20">
             Step {Math.min(currentStep, 2)} of 2
           </span>
         </div>
@@ -255,26 +277,26 @@ export function FindYourServiceGuide({
                 key={idx}
                 type="button"
                 onClick={() => handleSelectOption(currentStep, opt.match)}
-                className={`w-full text-left p-3.5 sm:p-4 rounded-xl border transition-all flex items-start justify-between gap-3 group ${
+                className={`w-full text-left p-3.5 sm:p-4 rounded-xl border transition-all flex items-start justify-between gap-3 group cursor-pointer ${
                   isDarkMode
                     ? 'bg-slate-900/60 border-slate-800 hover:border-pink-500/60 hover:bg-pink-950/20'
                     : 'bg-slate-50/80 border-slate-200 hover:border-[#C2185B] hover:bg-[#FFF5F8]'
                 }`}
               >
                 <div className="space-y-1">
-                  <div className="flex items-center gap-2">
-                    <span className="text-xs font-bold px-2 py-0.5 rounded bg-pink-500/15 text-pink-600 dark:text-pink-400">
+                  <div className="flex flex-wrap items-center gap-2">
+                    <span className="text-xs font-bold px-2 py-0.5 rounded bg-pink-500/15 text-[#9C1450] dark:text-pink-400">
                       {opt.tag}
                     </span>
                     <strong className="text-sm font-semibold group-hover:text-[#C2185B] dark:group-hover:text-pink-400 transition-colors">
                       {opt.label}
                     </strong>
                   </div>
-                  <p className="text-xs opacity-70 pl-0.5">
+                  <p className="text-xs opacity-75 pl-0.5">
                     {opt.description}
                   </p>
                 </div>
-                <div className="w-6 h-6 rounded-full bg-pink-500/10 text-pink-500 flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-[#C2185B] group-hover:text-white transition-all">
+                <div className="w-6 h-6 rounded-full bg-pink-500/10 text-[#C2185B] dark:text-pink-400 flex items-center justify-center shrink-0 mt-0.5 group-hover:bg-[#C2185B] group-hover:text-white transition-all">
                   <ChevronRight className="w-4 h-4" />
                 </div>
               </button>
@@ -293,7 +315,7 @@ export function FindYourServiceGuide({
           >
             <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-2 border-b pb-3 mb-3 border-pink-500/20">
               <div>
-                <span className="text-[11px] font-bold uppercase tracking-wider text-pink-500 px-2 py-0.5 rounded bg-pink-500/10 border border-pink-500/20">
+                <span className="text-[11px] font-bold uppercase tracking-wider text-[#9C1450] dark:text-pink-400 px-2 py-0.5 rounded bg-pink-500/10 border border-pink-500/20">
                   {recommendation.badge}
                 </span>
                 <h4 className="text-xl sm:text-2xl font-bold mt-1">

@@ -985,7 +985,7 @@ export default function App() {
       dutyVsContributionGap: 'Direct client inquiry seeking customized résumé transformation and career strategy.',
       diagnosticQuestionToAsk: 'What target organizations or health systems are at the top of your wish list?',
       publicCommentDraft: `Hi ${lead.first}, thank you for reaching out to Purpose & Glow! I received your inquiry for the ${lead.service} and will follow up shortly.`,
-      warmDmDraft: `Hi ${lead.first}, saw your request for the ${lead.service}. I have openings this week for our initial discovery call. What time works best for you?`
+      warmDmDraft: `Hi ${lead.first}, saw your request for the ${lead.service}. I have openings this week for my initial discovery call. What time works best for you?`
     };
 
     setLeads((prev) => [newLead, ...prev]);
@@ -1788,7 +1788,7 @@ export default function App() {
                   rows={3}
                   value={smartPasteText}
                   onChange={(e) => setSmartPasteText(e.target.value)}
-                  placeholder="Paste a candidate's LinkedIn comment, DM, or post text here... our engine extracts their background, calculates package fit, and creates drafts automatically with zero manual typing."
+                  placeholder="Paste a candidate's LinkedIn comment, DM, or post text here... the engine extracts their background, calculates package fit, and creates drafts automatically with zero manual typing."
                   className={`w-full px-3 py-2 text-xs border rounded-lg focus:outline-none leading-relaxed font-sans transition-colors ${
                     isDarkMode
                       ? 'bg-[#181D2C] border-[#283146] text-slate-100 focus:border-teal-400 placeholder:text-slate-500'

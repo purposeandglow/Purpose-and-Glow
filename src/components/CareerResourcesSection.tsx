@@ -1,5 +1,5 @@
 import React, { useState } from 'react';
-import { BookOpen, Check, ArrowRight, X, Sparkles, FileText, CheckSquare, Target } from 'lucide-react';
+import { BookOpen, Check, ArrowRight, X, Sparkles, FileText, CheckSquare, Target, ExternalLink, CheckCircle2 } from 'lucide-react';
 
 interface ArticleItem {
   id: string;
@@ -171,11 +171,11 @@ export function CareerResourcesSection({ isDarkMode = false }: CareerResourcesSe
               }`}
             >
               <div className="space-y-3">
-                <div className="flex items-center justify-between text-[11px] font-semibold text-pink-500">
+                <div className="flex items-center justify-between text-[11px] font-semibold text-[#9C1450] dark:text-pink-400">
                   <span className="px-2 py-0.5 rounded bg-pink-500/10 border border-pink-500/20">
                     {art.category}
                   </span>
-                  <span className="opacity-70">{art.readTime}</span>
+                  <span className="opacity-75">{art.readTime}</span>
                 </div>
                 <h3 className="text-base font-bold leading-snug tracking-tight">
                   {art.title}
@@ -189,7 +189,7 @@ export function CareerResourcesSection({ isDarkMode = false }: CareerResourcesSe
                 <button
                   type="button"
                   onClick={() => setActiveArticle(art)}
-                  className="w-full text-xs font-semibold text-[#C2185B] dark:text-pink-400 hover:underline flex items-center justify-between"
+                  className="w-full text-xs font-semibold text-[#C2185B] dark:text-pink-400 hover:underline flex items-center justify-between cursor-pointer"
                 >
                   <span>Read Guide</span>
                   <ArrowRight className="w-3.5 h-3.5" />
@@ -197,6 +197,37 @@ export function CareerResourcesSection({ isDarkMode = false }: CareerResourcesSe
               </div>
             </article>
           ))}
+        </div>
+
+        {/* Complimentary Job Search Registration Callout */}
+        <div
+          className={`mt-6 rounded-2xl border p-5 sm:p-6 flex flex-col md:flex-row md:items-center justify-between gap-4 ${
+            isDarkMode
+              ? 'bg-[#121624] border-pink-500/25 text-slate-100'
+              : 'bg-[#FFF5F8] border-[#FCD6E4] text-slate-900'
+          }`}
+        >
+          <div className="space-y-1.5 max-w-2xl">
+            <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-wider text-[#9C1450] dark:text-pink-400">
+              <CheckCircle2 className="w-4 h-4 shrink-0" />
+              <span>Free Job Search Assistance Registration · $0</span>
+            </div>
+            <h3 className="text-lg font-bold tracking-tight">
+              Need Guidance Getting Your Job Search Organized?
+            </h3>
+            <p className="text-xs sm:text-sm opacity-85 leading-relaxed">
+              Register for free job search recommendations and initial résumé feedback through Purpose &amp; Glow. Initial feedback, recommendations, and registration guidance are complimentary ($0). Personalized writing or coaching services are optional and priced upfront; free registration provides support and does not guarantee interviews, employment, or placement.
+            </p>
+          </div>
+          <a
+            href="https://tally.so/r/q5a1RY"
+            target="_blank"
+            rel="noopener noreferrer"
+            className="btn-ink shrink-0 justify-center whitespace-nowrap"
+          >
+            <span>Register Free on Tally</span>
+            <ExternalLink className="w-3.5 h-3.5" />
+          </a>
         </div>
 
         {/* Article Full Detail Modal */}

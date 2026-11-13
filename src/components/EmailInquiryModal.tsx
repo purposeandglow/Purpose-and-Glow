@@ -1,4 +1,4 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Mail, X, Check, Send, AlertCircle, Clock, Sparkles, Phone, User, Briefcase, ExternalLink } from 'lucide-react';
 
 export interface EmailInquiryData {
@@ -24,20 +24,23 @@ interface EmailInquiryModalProps {
 }
 
 const SERVICE_OPTIONS = [
-  { id: 'revamp_99', label: 'Résumé Revamp ($99) — 24-48h Turnaround' },
-  { id: 'scratch_145', label: 'Created From Scratch ($145) — 8-15+ Yr Pivot' },
-  { id: 'student_50', label: 'Student Résumé Services ($50) — New Grads' },
-  { id: 'cover_45', label: 'Targeted Cover Letter ($45)' },
-  { id: 'coaching_75', label: '1-on-1 Interview Coaching ($75)' },
-  { id: 'overhaul_239', label: 'Strategic Career Overhaul ($239)' },
-  { id: 'diy_free', label: 'General Inquiry / Free Diagnostic Review ($0)' }
+  { id: 'revamp_99', label: 'Professional Résumé Revamp — $99' },
+  { id: 'scratch_145', label: 'Created From Scratch — $145' },
+  { id: 'student_50', label: 'Student & Early Career Résumé — $50' },
+  { id: 'cover_49', label: 'Targeted Cover Letter — $49' },
+  { id: 'tailor_45', label: 'Job-Specific Résumé Tailoring — $45' },
+  { id: 'interview_65', label: 'Interview Preparation Session — $65' },
+  { id: 'career_ready_189', label: 'Career Ready Package — $189' },
+  { id: 'fresh_start_239', label: 'Fresh Start Package — $239' },
+  { id: 'strategy_free', label: 'Complimentary 15-Minute Strategy Call ($0)' },
+  { id: 'diy_free', label: 'Free DIY Résumé Recommendations ($0)' }
 ];
 
 export function EmailInquiryModal({
   isOpen,
   onClose,
   onSubmitSuccess,
-  defaultService = 'Résumé Revamp ($99) — 24-48h Turnaround',
+  defaultService = 'Professional Résumé Revamp — $99',
   recipientEmail = 'purposeandglowcareers@gmail.com',
   isDarkMode = false
 }: EmailInquiryModalProps) {
@@ -45,6 +48,12 @@ export function EmailInquiryModal({
   const [email, setEmail] = useState('');
   const [phone, setPhone] = useState('');
   const [service, setService] = useState(defaultService);
+
+  useEffect(() => {
+    if (defaultService) {
+      setService(defaultService);
+    }
+  }, [defaultService, isOpen]);
   const [currentRole, setCurrentRole] = useState('');
   const [targetRole, setTargetRole] = useState('');
   const [urgency, setUrgency] = useState<'urgent_48h' | 'standard_week' | 'flexible'>('urgent_48h');
@@ -64,7 +73,7 @@ export function EmailInquiryModal({
       return;
     }
     if (!email.trim() || !email.includes('@')) {
-      setErrorMessage('Please enter a valid email address so Nicole can respond.');
+      setErrorMessage('Please enter a valid email address so I can respond.');
       return;
     }
     if (!message.trim()) {
@@ -137,13 +146,13 @@ export function EmailInquiryModal({
   // Generate mailto link as transparent fallback
   const mailtoSubject = encodeURIComponent(`Purpose & Glow Consultation: ${service} - ${name || 'Job Seeker'}`);
   const mailtoBody = encodeURIComponent(
-    `Hi Nicole,\n\nI am contacting you regarding ${service}.\n\nCurrent Role: ${currentRole || 'Not specified'}\nTarget Goal: ${targetRole || 'Not specified'}\nUrgency: ${urgency === 'urgent_48h' ? 'Need within 24-48 hours' : urgency === 'standard_week' ? 'Within 3-5 days' : 'Flexible'}\n\nNotes / Questions:\n${message}\n\nBest regards,\n${name}\nEmail: ${email}\nPhone: ${phone || 'N/A'}`
+    `Hello Purpose & Glow Career Solutions,\n\nI am contacting you regarding ${service}.\n\nCurrent Role: ${currentRole || 'Not specified'}\nTarget Goal: ${targetRole || 'Not specified'}\nUrgency: ${urgency === 'urgent_48h' ? 'Need within 24-48 hours' : urgency === 'standard_week' ? 'Within 3-5 days' : 'Flexible'}\n\nNotes / Questions:\n${message}\n\nBest regards,\n${name}\nEmail: ${email}\nPhone: ${phone || 'N/A'}`
   );
   const directMailtoUrl = `mailto:${recipientEmail}?subject=${mailtoSubject}&body=${mailtoBody}`;
 
   return (
     <div
-      className="fixed inset-0 z-50 flex items-center justify-center p-3 sm:p-5 bg-slate-950/70 backdrop-blur-xs overflow-y-auto animate-fade-in"
+      className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-5 bg-slate-950/70 backdrop-blur-xs overflow-y-auto animate-fade-in"
       onClick={resetAndClose}
     >
       <div
@@ -176,7 +185,7 @@ export function EmailInquiryModal({
                   isDarkMode ? 'text-white' : 'text-[#2D2D2D]'
                 }`}
               >
-                Send Direct Message to Nicole
+                Send Direct Inquiry
               </h2>
               <div className="flex items-center gap-2 text-xs">
                 <span className={`text-[11px] sm:text-xs truncate max-w-[150px] sm:max-w-none ${isDarkMode ? 'text-pink-300' : 'text-[#C2185B] font-medium'}`}>
@@ -215,10 +224,10 @@ export function EmailInquiryModal({
 
               <div className="space-y-1">
                 <h3 className={`text-xl font-bold font-serif ${isDarkMode ? 'text-white' : 'text-slate-900'}`}>
-                  Message Dispatched to Nicole!
+                  Inquiry Received!
                 </h3>
                 <p className={`text-sm ${isDarkMode ? 'text-slate-300' : 'text-slate-600'} max-w-md mx-auto`}>
-                  Your inquiry has been delivered directly to <strong className="text-[#C2185B]">{recipientEmail}</strong> and logged in the Purpose &amp; Glow lead queue.
+                  Your inquiry has been logged for <strong className="text-[#C2185B]">{recipientEmail}</strong>. You can also send a copy directly via your email app below.
                 </p>
               </div>
 
@@ -429,8 +438,8 @@ export function EmailInquiryModal({
               {/* Message Field */}
               <div>
                 <label className="block text-xs font-semibold mb-1 text-slate-700 dark:text-slate-300 flex items-center justify-between">
-                  <span>How can Nicole help your career? *</span>
-                  <span className="text-[11px] font-normal text-slate-400">Tell us what needs fixing</span>
+                  <span>How can I help your career? *</span>
+                  <span className="text-[11px] font-normal text-slate-400">Tell me what needs fixing</span>
                 </label>
                 <textarea
                   required
@@ -462,17 +471,17 @@ export function EmailInquiryModal({
                 <button
                   type="submit"
                   disabled={isSubmitting}
-                  className="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-[#C2185B] hover:bg-[#9C1450] active:scale-98 disabled:opacity-60 text-white font-semibold text-xs transition-all cursor-pointer shadow-sm flex items-center justify-center gap-2"
+                  className="w-full sm:w-auto px-5 py-2.5 rounded-lg bg-[#C2185B] hover:bg-[#9C1450] active:scale-[0.98] disabled:opacity-60 text-white font-semibold text-xs transition-all cursor-pointer shadow-sm flex items-center justify-center gap-2"
                 >
                   {isSubmitting ? (
                     <>
                       <div className="w-3.5 h-3.5 border-2 border-white/30 border-t-white rounded-full animate-spin" />
-                      <span>Sending to {recipientEmail}...</span>
+                      <span>Submitting Inquiry...</span>
                     </>
                   ) : (
                     <>
                       <Send className="w-3.5 h-3.5" />
-                      <span>Send to {recipientEmail}</span>
+                      <span>Submit Inquiry</span>
                     </>
                   )}
                 </button>
@@ -483,7 +492,7 @@ export function EmailInquiryModal({
 
         {/* Footer Info Strip */}
         <div
-          className={`px-6 py-2.5 border-t text-[11px] flex items-center justify-between ${
+          className={`px-6 py-2.5 border-t text-[11px] flex flex-wrap items-center justify-between gap-2 ${
             isDarkMode
               ? 'bg-[#12141C] border-[#2A2E3D] text-slate-400'
               : 'bg-slate-50 border-slate-200 text-slate-500'
@@ -491,9 +500,9 @@ export function EmailInquiryModal({
         >
           <span className="flex items-center gap-1">
             <Sparkles className="w-3 h-3 text-[#C2185B]" />
-            Purpose &amp; Glow Career Solutions · Brooklyn Park, MN
+            Purpose &amp; Glow Career Solutions · Minnesota | Remote Nationwide
           </span>
-          <span className="font-mono text-[10px]">Turnaround: 24–48h</span>
+          <span className="font-mono text-[10px]">Replies within 1 business day</span>
         </div>
       </div>
     </div>

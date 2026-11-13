@@ -12,13 +12,13 @@ const FAQS: FaqItem[] = [
     id: 'ats',
     question: 'How does ATS (Applicant Tracking System) optimization actually work?',
     answer:
-      'Many online applications pass through an ATS before a human recruiter ever sees them. Purpose & Glow builds clean, single-column or standards-compliant semantic structures with standardized headers (Professional Experience, Education, Technical Skills), eliminating text boxes, floating tables, and complex graphics that cause ATS parsing errors. We also align your terminology with keywords commonly searched in your target industry.'
+      'Many online applications pass through an ATS before a human recruiter ever sees them. Purpose & Glow builds clean, single-column or standards-compliant semantic structures with standardized headers (Professional Experience, Education, Technical Skills), eliminating text boxes, floating tables, and complex graphics that cause ATS parsing errors. I also align your terminology with keywords commonly searched in your target industry.'
   },
   {
     id: 'guarantee',
     question: 'Do you guarantee that I will get a job or interview?',
     answer:
-      'We do not make false guarantees of hiring outcomes because hiring decisions depend on market conditions, company budgets, and interviewer preferences. What Purpose & Glow DOES guarantee is a high-impact, professional presentation that accurately highlights your accomplishments, removes duty-list clutter, passes modern ATS parsers, and positions you at the highest competitive level for your experience.'
+      'I do not make false guarantees of hiring outcomes because hiring decisions depend on market conditions, company budgets, and interviewer preferences. What Purpose & Glow does guarantee is a high-impact, professional presentation that accurately highlights your accomplishments, removes duty-list clutter, passes modern ATS parsers, and positions you at the highest competitive level for your experience.'
   },
   {
     id: 'revamp-vs-scratch',
@@ -42,19 +42,19 @@ const FAQS: FaqItem[] = [
     id: 'free-advice',
     question: 'Can I get honest advice before committing to a paid package?',
     answer:
-      'Yes, absolutely! We offer a 100% Free Career & Résumé Assessment ($0) and Free DIY Recommendations. You can submit your current background or questions and receive personal recommendations on what to improve. There is zero obligation to purchase any paid service.'
+      'Yes, absolutely! Purpose & Glow offers a 100% Free Career & Résumé Assessment ($0) and Free DIY Recommendations. You can submit your current background or questions and receive personal recommendations from me on what to improve. There is zero obligation to purchase any paid service.'
   },
   {
     id: 'remote',
     question: 'Do you work with clients outside of Minnesota?',
     answer:
-      'Yes! While Purpose & Glow is proudly founded in Minnesota, we serve clients remotely across all 50 US states. Consultations, intake reviews, and revisions take place seamlessly via email, phone, and optional video conferencing (Google Meet/Zoom).'
+      'Yes! While Purpose & Glow is based in Minnesota, I work with clients remotely across all 50 US states. Consultations, intake reviews, and revisions take place seamlessly via email, phone, and optional video conferencing (Google Meet/Zoom).'
   },
   {
     id: 'payments',
     question: 'How does payment work and what payment methods do you accept?',
     answer:
-      'We accept Apple Pay, Venmo, and secure digital invoices powered by Square. Payment is completed before the final unwatermarked files are delivered. We never charge recurring subscriptions or hidden administrative fees.'
+      'Purpose & Glow accepts Apple Pay, Venmo, and secure digital invoices powered by Square. Payment is completed before final files are delivered. There are never recurring subscriptions or hidden administrative fees.'
   }
 ];
 
@@ -83,7 +83,7 @@ export function FaqAccordion({ isDarkMode = false }: FaqAccordionProps) {
             Everything You Need <em>To Know</em>
           </h2>
           <p>
-            Clear answers about turnaround times, ATS compliance, guarantees, and how we collaborate together.
+            Clear answers about turnaround times, ATS compliance, guarantees, and how you and I work together.
           </p>
         </div>
 

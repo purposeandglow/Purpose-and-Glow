@@ -223,6 +223,7 @@ a:focus-visible,button:focus-visible,input:focus-visible,select:focus-visible,te
 .hero-cta{
   display:flex;flex-direction:column;align-items:flex-end;gap:10px;text-align:right;
 }
+.hero-cta-buttons{display:flex;flex-wrap:wrap;gap:10px;justify-content:flex-end}
 .hero-cta .btn-ink{padding:18px 24px;font-size:15px}
 .hero-cta small{font-family:var(--sans);font-size:12px;color:var(--ink-3)}
 kbd{font-family:var(--sans);font-size:11px;font-weight:600;border:1px solid var(--red);border-bottom-width:2px;padding:1px 6px;color:var(--red-deep);background:var(--paper)}
@@ -248,7 +249,7 @@ kbd{font-family:var(--sans);font-size:11px;font-weight:600;border:1px solid var(
 .fig figcaption{display:flex;gap:var(--s2);margin-top:var(--s3);font-family:var(--sans);font-size:13px;line-height:1.5;color:var(--ink-3)}
 .fig figcaption b{color:var(--red);font-weight:600;white-space:nowrap}
 .sh{border-top:3px solid var(--red);padding-top:var(--s3);margin-bottom:var(--s6)}
-.sh .label{display:flex;justify-content:space-between;gap:var(--s2)}
+.sh .label{display:flex;justify-content:space-between;flex-wrap:wrap;gap:var(--s2)}
 .sh h2{margin-top:var(--s2);font-size:clamp(2rem,4vw,3.25rem);line-height:1.08;letter-spacing:-.02em}
 .sh h2 em{font-style:italic;color:var(--red)}
 .sh p{margin-top:var(--s3);color:var(--ink-2);max-width:60ch}
@@ -274,6 +275,7 @@ kbd{font-family:var(--sans);font-size:11px;font-weight:600;border:1px solid var(
 .svc .body ul{margin-top:var(--s2);display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:4px var(--s4)}
 .svc .body li{position:relative;padding-left:18px;font-size:16px}
 .svc .body li::before{content:"";position:absolute;left:0;top:.72em;width:8px;height:1px;background:var(--red)}
+.svc-actions{display:flex;flex-wrap:wrap;gap:10px;margin-top:16px}
 
 /* testimony */
 .quote-wrap{border-top:1px solid var(--ink);padding-top:var(--s4)}
@@ -498,6 +500,7 @@ kbd{font-family:var(--sans);font-size:11px;font-weight:600;border:1px solid var(
   .hero-aside{grid-column:9 / span 4}
   .hero-foot{grid-template-columns:1fr}
   .hero-cta{align-items:flex-start;text-align:left}
+  .hero-cta-buttons{justify-content:flex-start}
   .pf-row{grid-template-columns:48px minmax(0,1fr) 200px;}
   .pf-actions{grid-column:2 / -1;justify-content:flex-start}
   .addons{grid-template-columns:repeat(2,minmax(0,1fr))}
