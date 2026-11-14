@@ -1,6 +1,7 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { Send, Bot, Sparkles, User, RefreshCw, X, MessageSquare, ChevronRight, Zap } from 'lucide-react';
 import { LeadSignal } from '../data/purposeGlowData';
+import { isStaticHostingMode, parseJsonApiResponse } from '../lib/hostingMode';
 
 interface ChatMessage {
   id?: number;
@@ -33,23 +34,35 @@ export const GeminiCopilotDrawer: React.FC<GeminiCopilotDrawerProps> = ({
   const [input, setInput] = useState('');
   const [isLoading, setIsLoading] = useState(false);
   const scrollRef = useRef<HTMLDivElement>(null);
+  const staticHosting = isStaticHostingMode();
 
-  // Load chat history from Cloud SQL on mount
+  // Load chat history from server on mount when authenticated (skipped in static hosting mode)
   useEffect(() => {
     async function loadHistory() {
-      try {
-        const headers: Record<string, string> = {};
-        if (authToken) headers['Authorization'] = `Bearer ${authToken}`;
-        const res = await fetch('/api/copilot/history', { headers });
-        if (res.ok) {
-          const data = await res.json();
-          if (data.history && Array.isArray(data.history) && data.history.length > 0) {
-            setMessages(data.history);
+      if (staticHosting) {
+        setMessages([
+          {
+            role: 'model',
+            content:
+              'Static Hosting Mode Active (Spark Plan): Live Gemini Copilot requires the Express API backend and is paused on static Firebase Hosting. Your Lead Qualifier, Keyword Rules, Firestore Sync, and JSON Backup/Restore remain fully active.'
+          }
+        ]);
+        return;
+      }
+
+      if (authToken) {
+        try {
+          const res = await fetch('/api/copilot/history', {
+            headers: { Authorization: `Bearer ${authToken}` }
+          });
+          const parsed = await parseJsonApiResponse<{ history?: ChatMessage[] }>(res);
+          if (parsed.ok && parsed.data?.history && Array.isArray(parsed.data.history) && parsed.data.history.length > 0) {
+            setMessages(parsed.data.history);
             return;
           }
+        } catch (err) {
+          console.warn('Could not load chat history:', err);
         }
-      } catch (err) {
-        console.warn('Could not load chat history:', err);
       }
 
       // Default welcome message if empty
@@ -65,7 +78,7 @@ export const GeminiCopilotDrawer: React.FC<GeminiCopilotDrawerProps> = ({
     if (isOpen) {
       loadHistory();
     }
-  }, [isOpen, authToken]);
+  }, [isOpen, authToken, staticHosting]);
 
   // Scroll to bottom on new message
   useEffect(() => {
@@ -75,6 +88,7 @@ export const GeminiCopilotDrawer: React.FC<GeminiCopilotDrawerProps> = ({
   }, [messages, isLoading]);
 
   const handleSendMessage = async (textToSend?: string) => {
+    if (staticHosting) return;
     const text = textToSend || input.trim();
     if (!text || isLoading) return;
 
@@ -110,6 +124,10 @@ export const GeminiCopilotDrawer: React.FC<GeminiCopilotDrawerProps> = ({
         })
       });
 
+      if (res.status === 401 || res.status === 403) {
+        throw new Error('Admin Firebase Google Sign-In session expired or unauthorized.');
+      }
+
       if (!res.ok) {
         throw new Error(`HTTP ${res.status}`);
       }
@@ -127,7 +145,9 @@ export const GeminiCopilotDrawer: React.FC<GeminiCopilotDrawerProps> = ({
         {
           role: 'model',
           content:
-            'Sorry Nicole, I ran into a connection issue. Remember her core principle: focus on what time they saved, errors they reduced, or revenue they protected!'
+            err?.message && err.message.includes('Admin Firebase')
+              ? err.message
+              : 'Sorry Nicole, I ran into a connection issue. Remember her core principle: focus on what time they saved, errors they reduced, or revenue they protected!'
         }
       ]);
     } finally {
@@ -160,6 +180,7 @@ export const GeminiCopilotDrawer: React.FC<GeminiCopilotDrawerProps> = ({
         <button
           type="button"
           onClick={onClose}
+          aria-label="Close Diagnostic Copilot"
           className="p-1.5 text-teal-200 hover:text-white hover:bg-teal-800 rounded-lg transition-colors cursor-pointer"
         >
           <X className="w-4 h-4" />
@@ -235,7 +256,7 @@ export const GeminiCopilotDrawer: React.FC<GeminiCopilotDrawerProps> = ({
               key={idx}
               type="button"
               onClick={() => handleSendMessage(prompt)}
-              disabled={isLoading}
+              disabled={isLoading || staticHosting}
               className="text-[11px] text-slate-700 bg-white hover:bg-teal-50 hover:text-teal-900 border border-slate-200 hover:border-teal-200 px-2 py-1 rounded-md text-left transition-colors cursor-pointer disabled:opacity-50"
             >
               {prompt}
@@ -257,12 +278,18 @@ export const GeminiCopilotDrawer: React.FC<GeminiCopilotDrawerProps> = ({
             type="text"
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            placeholder="Ask Copilot to diagnose this candidate..."
-            className="flex-1 px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:bg-white focus:border-teal-700"
+            disabled={staticHosting}
+            placeholder={
+              staticHosting
+                ? 'Copilot paused on static hosting (Express API required)...'
+                : 'Ask Copilot to diagnose this candidate...'
+            }
+            className="flex-1 px-3 py-2 text-xs bg-slate-50 border border-slate-200 rounded-lg focus:outline-none focus:bg-white focus:border-teal-700 disabled:opacity-60"
           />
           <button
             type="submit"
-            disabled={!input.trim() || isLoading}
+            aria-label="Send prompt"
+            disabled={!input.trim() || isLoading || staticHosting}
             className="p-2 bg-teal-900 hover:bg-teal-950 text-white rounded-lg disabled:opacity-40 transition-colors cursor-pointer"
           >
             <Send className="w-4 h-4" />

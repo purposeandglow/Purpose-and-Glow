@@ -30,12 +30,21 @@ import {
 } from 'lucide-react';
 import { EmailInquiryModal, EmailInquiryData } from './EmailInquiryModal';
 import { FreeAssessmentModal, AssessmentData } from './FreeAssessmentModal';
+import { PublicResumeAssessmentModal } from './PublicResumeAssessmentModal';
 import { PromotionalBanner } from './PromotionalBanner';
 import { FindYourServiceGuide } from './FindYourServiceGuide';
 import { MobilePricingCards } from './MobilePricingCards';
 import { PaymentMethodsBanner } from './PaymentMethodsBanner';
 import { FaqAccordion } from './FaqAccordion';
 import { CareerResourcesSection } from './CareerResourcesSection';
+import { PrivacyPolicyModal } from './PrivacyPolicyModal';
+import { useDialogAccessibility } from '../hooks/useDialogAccessibility';
+import {
+  BUSINESS_CONTACT_EMAIL,
+  TALLY_REGISTRATION_URL,
+  isStaticHostingMode,
+  parseJsonApiResponse
+} from '../lib/hostingMode';
 import { generateResumeSvg } from '../utils/obsidianSvg';
 import '../styles/obsidian.css';
 
@@ -52,14 +61,13 @@ interface ClientFacingSiteProps {
   }) => void;
   isDarkMode?: boolean;
   onToggleDarkMode?: () => void;
+  adminAuthToken?: string | null;
 }
 
 interface RequestRecord {
   id: string;
   first: string;
-  email: string;
   service: string;
-  note: string;
   done: boolean;
   at: number;
 }
@@ -68,7 +76,8 @@ export function ClientFacingSite({
   onOpenAdmin,
   onInboundLeadSubmitted,
   isDarkMode = false,
-  onToggleDarkMode
+  onToggleDarkMode,
+  adminAuthToken = null
 }: ClientFacingSiteProps) {
   // Navigation & scroll progress states
   const [scrollProgress, setScrollProgress] = useState(0);
@@ -100,9 +109,12 @@ export function ClientFacingSite({
     }
   };
 
-  // Free Career & Résumé Assessment state
+  // Free Career & Résumé Assessment state (Human Review + Optional AI Assessment)
   const [isAssessmentModalOpen, setIsAssessmentModalOpen] = useState(false);
+  const [isAiAssessmentModalOpen, setIsAiAssessmentModalOpen] = useState(false);
+  const [isPrivacyModalOpen, setIsPrivacyModalOpen] = useState(false);
   const [pricingViewMode, setPricingViewMode] = useState<'cards' | 'table'>('cards');
+  const burgerRef = useRef<HTMLButtonElement>(null);
 
   const handleAssessmentSuccess = (data: AssessmentData) => {
     if (onInboundLeadSubmitted) {
@@ -116,7 +128,9 @@ export function ClientFacingSite({
         urgency: 'urgent_48h'
       });
     }
-    showToast('Free assessment received! I will email you shortly.');
+    if (!isStaticHostingMode()) {
+      showToast('Free assessment received! I will email you shortly.');
+    }
   };
 
   // Review carousel in Section 02
@@ -134,20 +148,43 @@ export function ClientFacingSite({
     }
   });
   const [selectedSample, setSelectedSample] = useState<SampleItem | null>(null);
+  const closeSampleLightbox = React.useCallback(() => setSelectedSample(null), []);
+  const sampleDialogRef = useDialogAccessibility(Boolean(selectedSample), closeSampleLightbox, true);
 
   // Contact form & ledger in Section 06
+  const staticMode = isStaticHostingMode();
   const [formName, setFormName] = useState('');
   const [formEmail, setFormEmail] = useState('');
   const [formService, setFormService] = useState('Professional Résumé Revamp — $99');
   const [formNote, setFormNote] = useState('');
+  const [contactConsentChecked, setContactConsentChecked] = useState(false);
   const [formStatus, setFormStatus] = useState<{ msg: string; isErr: boolean } | null>(null);
+  const [staticContactHandoff, setStaticContactHandoff] = useState<{
+    first: string;
+    service: string;
+    mailtoUrl: string;
+  } | null>(null);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [copyFeedback, setCopyFeedback] = useState<string | null>(null);
 
   const [requests, setRequests] = useState<Record<string, RequestRecord>>(() => {
     try {
       const saved = localStorage.getItem('pg_client_requests');
-      return saved ? JSON.parse(saved) : {};
+      if (!saved) return {};
+      const parsed = JSON.parse(saved) as Record<string, any>;
+      const sanitized: Record<string, RequestRecord> = {};
+      for (const [k, v] of Object.entries(parsed || {})) {
+        if (v && typeof v === 'object') {
+          sanitized[k] = {
+            id: String(v.id || k),
+            first: String(v.first || 'Visitor'),
+            service: String(v.service || 'Consultation Inquiry'),
+            done: Boolean(v.done),
+            at: Number(v.at || Date.now())
+          };
+        }
+      }
+      return sanitized;
     } catch {
       return {};
     }
@@ -212,26 +249,13 @@ export function ClientFacingSite({
     };
   }, [selectedSample]);
 
-  // Keyboard shortcut: Shift + C jumps directly to contact form, Escape closes overlays
+  // Keyboard shortcut: Shift + C jumps directly to contact form, Escape closes mobile menu cleanly
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (e.key === 'Escape') {
-        if (selectedSample) {
-          setSelectedSample(null);
-          return;
-        }
-        if (isMobileMenuOpen) {
-          setIsMobileMenuOpen(false);
-          return;
-        }
-        if (isEmailModalOpen) {
-          setIsEmailModalOpen(false);
-          return;
-        }
-        if (isAssessmentModalOpen) {
-          setIsAssessmentModalOpen(false);
-          return;
-        }
+      if (e.key === 'Escape' && isMobileMenuOpen) {
+        setIsMobileMenuOpen(false);
+        window.setTimeout(() => burgerRef.current?.focus(), 0);
+        return;
       }
 
       if (e.shiftKey && (e.key === 'C' || e.key === 'c')) {
@@ -252,7 +276,7 @@ export function ClientFacingSite({
 
     window.addEventListener('keydown', handleKeyDown);
     return () => window.removeEventListener('keydown', handleKeyDown);
-  }, [selectedSample, isMobileMenuOpen, isEmailModalOpen, isAssessmentModalOpen]);
+  }, [isMobileMenuOpen]);
 
   // Save shortlist & requests to localStorage
   useEffect(() => {
@@ -315,6 +339,8 @@ export function ClientFacingSite({
 
   const handleContactSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
+    setStaticContactHandoff(null);
+
     if (!formName.trim()) {
       setFormStatus({ msg: 'Please enter your first name.', isErr: true });
       return;
@@ -324,82 +350,145 @@ export function ClientFacingSite({
       setFormStatus({ msg: 'Please enter a valid email address.', isErr: true });
       return;
     }
+    if (!contactConsentChecked) {
+      setFormStatus({
+        msg: 'Please confirm the privacy consent checkbox before continuing.',
+        isErr: true
+      });
+      return;
+    }
 
-    setIsSubmitting(true);
     const newId = `req-${Date.now()}`;
-    const newRecord: RequestRecord = {
-      id: newId,
-      first: formName.trim().slice(0, 60),
-      email: formEmail.trim().slice(0, 120),
-      service: formService,
-      note: formNote.trim().slice(0, 800),
-      done: false,
-      at: Date.now()
+    const trimmedName = formName.trim().slice(0, 60);
+    const trimmedEmail = formEmail.trim().slice(0, 120);
+    const trimmedNote = formNote.trim().slice(0, 1800);
+
+    const buildMailtoHref = () => {
+      const subject = encodeURIComponent(
+        `Purpose & Glow Inquiry: ${formService} - ${trimmedName}`
+      );
+      const body = encodeURIComponent(
+        `Hello Purpose & Glow Career Solutions,\n\nService: ${formService}\nFrom: ${trimmedName} (${trimmedEmail})\n\nNotes / Goals:\n${trimmedNote || `Consultation request for ${formService}`}`
+      );
+      return `mailto:${BUSINESS_CONTACT_EMAIL}?subject=${subject}&body=${body}`;
     };
 
-    setRequests((prev) => ({ [newId]: newRecord, ...prev }));
-    setFormStatus({
-      msg: `Thank you, ${newRecord.first} — your inquiry for "${newRecord.service}" has been received at purposeandglowcareers@gmail.com. I will reply within one business day.`,
-      isErr: false
-    });
-
-    if (onInboundLeadSubmitted) {
-      onInboundLeadSubmitted({
-        first: newRecord.first,
-        email: newRecord.email,
-        service: newRecord.service,
-        note: newRecord.note,
-        id: newRecord.id
+    if (staticMode) {
+      const localReminder: RequestRecord = {
+        id: newId,
+        first: trimmedName,
+        service: formService,
+        done: false,
+        at: Date.now()
+      };
+      setRequests((prev) => ({ [newId]: localReminder, ...prev }));
+      setStaticContactHandoff({
+        first: trimmedName,
+        service: formService,
+        mailtoUrl: buildMailtoHref()
       });
+      setFormStatus({
+        msg: 'Next step required: because this site is hosted statically, complete your request below via Free Tally Registration or your email app.',
+        isErr: false
+      });
+      if (onInboundLeadSubmitted) {
+        onInboundLeadSubmitted({
+          first: trimmedName,
+          email: trimmedEmail,
+          service: formService,
+          note: trimmedNote,
+          id: newId
+        });
+      }
+      return;
     }
 
-    // Save lead to local endpoint if available
+    setIsSubmitting(true);
+
     try {
-      await fetch('/api/leads', {
+      const apiRes = await fetch('/api/contact/email', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          personName: newRecord.first,
-          headline: `Inbound Client: ${newRecord.service}`,
-          location: 'United States / Remote',
-          sourceType: 'Inbound Consultation Request',
-          sourceContext: `Client request submitted via website form (${newRecord.service})`,
-          sourceUrl: 'https://purposeglowcareer.com/#contact',
-          rawText: newRecord.note || `Interested in: ${newRecord.service}. Contact: ${newRecord.email}`,
-          yearsExperience: 5,
-          isHealthcareOrOps: /healthcare|billing|clinic|ops/i.test(`${newRecord.service} ${newRecord.note}`),
-          detectedCluster: /student/i.test(newRecord.service) ? 'student_grad' : /scratch/i.test(newRecord.service) ? 'career_pivot' : 'healthcare_rcm',
-          recommendedPackageId: /student/i.test(newRecord.service) ? 'student_50' : /scratch/i.test(newRecord.service) ? 'scratch_145' : 'revamp_99',
-          status: 'new_signal',
-          fitScore: 98
-        })
-      });
-    } catch (err) {
-      console.warn('Could not post lead to server:', err);
-    }
-
-    // Send email dispatch to business email
-    try {
-      await fetch('/api/contact/email', {
-        method: 'POST',
-        headers: { 'Content-Type': 'application/json' },
-        body: JSON.stringify({
-          name: newRecord.first,
-          email: newRecord.email,
-          service: newRecord.service,
-          message: newRecord.note || `Consultation request for ${newRecord.service}`,
+          name: trimmedName,
+          email: trimmedEmail,
+          service: formService,
+          message: trimmedNote || `Consultation request for ${formService}`,
           urgency: 'standard_week',
-          recipientEmail: 'purposeandglowcareers@gmail.com'
+          recipientEmail: BUSINESS_CONTACT_EMAIL
         })
       });
-    } catch (err) {
-      console.warn('Could not post inquiry to /api/contact/email:', err);
-    }
+      const parsed = await parseJsonApiResponse<{
+        error?: string;
+        id?: string;
+        duplicate?: boolean;
+        inquiry?: { id?: string };
+      }>(apiRes);
+      if (!parsed.ok || !parsed.data) {
+        if (parsed.isHtmlFallback) {
+          setStaticContactHandoff({
+            first: trimmedName,
+            service: formService,
+            mailtoUrl: buildMailtoHref()
+          });
+          setFormStatus({
+            msg: 'Direct server submission is not active right now. Please complete your request via Tally or your email app below.',
+            isErr: true
+          });
+        } else {
+          setFormStatus({
+            msg: parsed.data?.error || 'Please review your entry and try again.',
+            isErr: true
+          });
+        }
+        setIsSubmitting(false);
+        return;
+      }
 
-    setFormName('');
-    setFormEmail('');
-    setFormNote('');
-    setIsSubmitting(false);
+      const persistedId = parsed.data.id || parsed.data.inquiry?.id || newId;
+      const newRecord: RequestRecord = {
+        id: persistedId,
+        first: trimmedName,
+        service: formService,
+        done: false,
+        at: Date.now()
+      };
+
+      setRequests((prev) => ({ [persistedId]: newRecord, ...prev }));
+      setFormStatus({
+        msg: parsed.data.duplicate
+          ? `Thank you, ${newRecord.first} — your recent inquiry for "${newRecord.service}" is already saved for Purpose & Glow Career Solutions.`
+          : `Thank you, ${newRecord.first} — your inquiry for "${newRecord.service}" has been saved for Purpose & Glow Career Solutions (${BUSINESS_CONTACT_EMAIL}).`,
+        isErr: false
+      });
+
+      if (onInboundLeadSubmitted) {
+        onInboundLeadSubmitted({
+          first: newRecord.first,
+          email: trimmedEmail,
+          service: newRecord.service,
+          note: trimmedNote,
+          id: persistedId
+        });
+      }
+
+      setFormName('');
+      setFormEmail('');
+      setFormNote('');
+      setContactConsentChecked(false);
+    } catch {
+      setStaticContactHandoff({
+        first: trimmedName,
+        service: formService,
+        mailtoUrl: buildMailtoHref()
+      });
+      setFormStatus({
+        msg: `Unable to reach the server right now. Complete your inquiry using Free Tally Registration or email ${BUSINESS_CONTACT_EMAIL} below.`,
+        isErr: true
+      });
+    } finally {
+      setIsSubmitting(false);
+    }
   };
 
   const handleToggleRecordDone = (id: string) => {
@@ -418,6 +507,14 @@ export function ClientFacingSite({
       delete copy[id];
       return copy;
     });
+  };
+
+  const handleClearInquiryHistory = () => {
+    setRequests({});
+    try {
+      localStorage.removeItem('pg_client_requests');
+    } catch {}
+    showToast('Cleared browser inquiry history');
   };
 
   const requestList = useMemo(() => {
@@ -516,11 +613,13 @@ export function ClientFacingSite({
 
             {/* Mobile Navigation Trigger */}
             <button
+              ref={burgerRef}
               type="button"
               className="burger"
               id="burger"
               aria-label="Toggle navigation"
               aria-expanded={isMobileMenuOpen}
+              aria-controls="mobileNav"
               onClick={() => setIsMobileMenuOpen(!isMobileMenuOpen)}
             >
               <span className="sr-only">Toggle navigation</span>
@@ -720,7 +819,7 @@ export function ClientFacingSite({
                   </div>
                   <div>
                     <dt>Free Assessment</dt>
-                    <dd>
+                    <dd style={{ display: 'flex', flexDirection: 'column', gap: '4px' }}>
                       <button
                         type="button"
                         onClick={() => setIsAssessmentModalOpen(true)}
@@ -728,7 +827,16 @@ export function ClientFacingSite({
                         style={{ background: 'none', border: 'none', padding: 0, font: 'inherit', color: 'var(--red)', cursor: 'pointer', textAlign: 'left', fontWeight: 600 }}
                         title="Open Free Career & Résumé Assessment"
                       >
-                        Get Free Assessment ($0) →
+                        Get Free Human Assessment ($0) →
+                      </button>
+                      <button
+                        type="button"
+                        onClick={() => setIsAiAssessmentModalOpen(true)}
+                        className="ul"
+                        style={{ background: 'none', border: 'none', padding: 0, font: 'inherit', fontSize: '12px', color: 'var(--ink-2)', cursor: 'pointer', textAlign: 'left', fontWeight: 500 }}
+                        title="Try Optional Instant AI Résumé Assessment"
+                      >
+                        Try AI Résumé Feedback ($0) →
                       </button>
                     </dd>
                   </div>
@@ -777,7 +885,7 @@ export function ClientFacingSite({
                       <ArrowRight style={{ width: '14px', height: '14px' }} />
                     </a>
 
-                    {/* CTA 2: Get a Free Career & Résumé Assessment */}
+                    {/* CTA 2: Get a Free Career & Résumé Assessment (Human) */}
                     <button
                       type="button"
                       onClick={() => setIsAssessmentModalOpen(true)}
@@ -791,6 +899,17 @@ export function ClientFacingSite({
                     >
                       <Sparkles style={{ width: '15px', height: '15px', color: '#FCE8F0' }} />
                       <span>Free Career &amp; Résumé Assessment</span>
+                    </button>
+
+                    {/* Optional Instant AI Résumé Assessment */}
+                    <button
+                      type="button"
+                      onClick={() => setIsAiAssessmentModalOpen(true)}
+                      className="btn-line"
+                      title="Upload PDF/DOCX or paste résumé text for optional instant AI assessment"
+                    >
+                      <FileText style={{ width: '15px', height: '15px', color: 'var(--red)' }} />
+                      <span>Optional AI Résumé Check</span>
                     </button>
 
                     {/* CTA 3: View My Work */}
@@ -2090,24 +2209,107 @@ export function ClientFacingSite({
                   </div>
                 </div>
 
+                <label htmlFor="fConsent" className="form-consent">
+                  <input
+                    id="fConsent"
+                    type="checkbox"
+                    checked={contactConsentChecked}
+                    onChange={(e) => setContactConsentChecked(e.target.checked)}
+                  />
+                  <span>
+                    I consent to Purpose &amp; Glow Career Solutions reviewing my inquiry details solely to respond to my request.{' '}
+                    <button
+                      type="button"
+                      onClick={() => setIsPrivacyModalOpen(true)}
+                      className="ul"
+                    >
+                      Read Privacy Policy
+                    </button>
+                  </span>
+                </label>
+
                 <div className="form-foot">
-                  <div className={`form-status ${formStatus?.isErr ? 'err' : ''}`}>
-                    {formStatus?.msg || 'Replies within one business day.'}
+                  <div
+                    role={formStatus?.isErr ? 'alert' : 'status'}
+                    aria-live="polite"
+                    className={`form-status ${formStatus?.isErr ? 'err' : ''}`}
+                  >
+                    {formStatus?.msg || (staticMode
+                      ? 'Prepare your request below to submit via Free Tally Registration or email.'
+                      : 'Replies within one business day.')}
                   </div>
                   <button type="submit" className="btn-ink" disabled={isSubmitting}>
-                    <span>{isSubmitting ? 'Sending Request...' : 'Send Consultation Request'}</span>
+                    <span>
+                      {isSubmitting
+                        ? 'Sending Request...'
+                        : staticMode
+                        ? 'Prepare Tally / Email Handoff'
+                        : 'Send Consultation Request'}
+                    </span>
                     <ArrowRight style={{ width: '15px', height: '15px' }} />
                   </button>
                 </div>
+
+                {staticContactHandoff && (
+                  <div
+                    role="region"
+                    aria-label="Complete your inquiry submission"
+                    style={{
+                      marginTop: '16px',
+                      padding: '16px',
+                      border: '1px solid var(--red)',
+                      background: 'var(--red-tint)',
+                      display: 'grid',
+                      gap: '10px'
+                    }}
+                  >
+                    <p style={{ fontSize: '14px', fontFamily: 'var(--sans)', fontWeight: 600 }}>
+                      Finish Sending Your Request for {staticContactHandoff.service}
+                    </p>
+                    <p style={{ fontSize: '13px', fontFamily: 'var(--sans)', color: 'var(--ink-2)', lineHeight: 1.5 }}>
+                      This static preview cannot submit forms directly to a backend server. Complete your request confidentially on Tally or send via your email app:
+                    </p>
+                    <div style={{ display: 'flex', flexWrap: 'wrap', gap: '10px' }}>
+                      <a
+                        href={TALLY_REGISTRATION_URL}
+                        target="_blank"
+                        rel="noopener noreferrer"
+                        className="btn-ink"
+                      >
+                        <span>Complete via Free Tally Form</span>
+                        <ExternalLink style={{ width: '14px', height: '14px' }} />
+                      </a>
+                      <a
+                        href={staticContactHandoff.mailtoUrl}
+                        className="btn-line"
+                      >
+                        <Mail style={{ width: '14px', height: '14px' }} />
+                        <span>Send via Email App</span>
+                      </a>
+                    </div>
+                  </div>
+                )}
               </form>
 
               {/* Submissions Ledger */}
               <div className="ledger" aria-label="Recent consultation inquiries on this browser">
                 <div className="ledger-head">
                   <h4>Your Inquiries on This Device</h4>
-                  <span className="label">
-                    {openRequestsCount} pending · {requestList.length} total
-                  </span>
+                  <div className="ledger-head-actions">
+                    <span className="label">
+                      {openRequestsCount} pending · {requestList.length} total
+                    </span>
+                    {requestList.length > 0 && (
+                      <button
+                        type="button"
+                        onClick={handleClearInquiryHistory}
+                        className="mini"
+                        title="Remove saved inquiry reminders from this browser"
+                      >
+                        Clear History
+                      </button>
+                    )}
+                  </div>
                 </div>
 
                 {requestList.length === 0 ? (
@@ -2132,6 +2334,7 @@ export function ClientFacingSite({
                             type="button"
                             className="mini"
                             onClick={() => handleDeleteRecord(req.id)}
+                            aria-label={`Remove ${req.first} from browser inquiry history`}
                             title="Delete this record"
                           >
                             ✕
@@ -2177,6 +2380,15 @@ export function ClientFacingSite({
                 <li><a href="#faq" className="ul">FAQ</a></li>
                 <li><a href="#resources" className="ul">Career Resources</a></li>
                 <li><a href="#contact" className="ul">Contact &amp; Consultations</a></li>
+                <li>
+                  <button
+                    type="button"
+                    onClick={() => setIsPrivacyModalOpen(true)}
+                    className="ul"
+                  >
+                    Privacy Policy
+                  </button>
+                </li>
               </ul>
             </div>
 
@@ -2251,16 +2463,22 @@ export function ClientFacingSite({
       {selectedSample && (
         <div
           className="lb open"
-          role="dialog"
-          aria-modal="true"
-          aria-labelledby="lbTitle"
-          onClick={() => setSelectedSample(null)}
+          onClick={closeSampleLightbox}
         >
-          <div className="lb-panel" onClick={(e) => e.stopPropagation()}>
+          <div
+            ref={sampleDialogRef}
+            tabIndex={-1}
+            role="dialog"
+            aria-modal="true"
+            aria-labelledby="lbTitle"
+            className="lb-panel"
+            style={{ outline: 'none' }}
+            onClick={(e) => e.stopPropagation()}
+          >
             <button
               type="button"
               className="sq lb-close"
-              onClick={() => setSelectedSample(null)}
+              onClick={closeSampleLightbox}
               aria-label="Close preview"
             >
               <X />
@@ -2356,16 +2574,36 @@ export function ClientFacingSite({
         isOpen={isEmailModalOpen}
         onClose={() => setIsEmailModalOpen(false)}
         onSubmitSuccess={handleEmailModalSuccess}
+        onOpenPrivacyPolicy={() => setIsPrivacyModalOpen(true)}
         defaultService={emailModalDefaultService}
-        recipientEmail="purposeandglowcareers@gmail.com"
+        recipientEmail={BUSINESS_CONTACT_EMAIL}
         isDarkMode={isDarkMode}
       />
 
-      {/* Free Career & Résumé Assessment Modal */}
+      {/* Free Career & Résumé Assessment Modal (Human Review) */}
       <FreeAssessmentModal
         isOpen={isAssessmentModalOpen}
         onClose={() => setIsAssessmentModalOpen(false)}
         onSubmitSuccess={handleAssessmentSuccess}
+        onOpenPrivacyPolicy={() => setIsPrivacyModalOpen(true)}
+        isDarkMode={isDarkMode}
+      />
+
+      {/* Optional Public AI Résumé Assessment Modal */}
+      <PublicResumeAssessmentModal
+        isOpen={isAiAssessmentModalOpen}
+        onClose={() => setIsAiAssessmentModalOpen(false)}
+        onSwitchToHumanAssessment={() => setIsAssessmentModalOpen(true)}
+        onSelectService={(svc) => handleSelectService(svc)}
+        onOpenPrivacyPolicy={() => setIsPrivacyModalOpen(true)}
+        isDarkMode={isDarkMode}
+        adminAuthToken={adminAuthToken}
+      />
+
+      {/* Privacy Policy & Data Practices Modal */}
+      <PrivacyPolicyModal
+        isOpen={isPrivacyModalOpen}
+        onClose={() => setIsPrivacyModalOpen(false)}
         isDarkMode={isDarkMode}
       />
     </div>

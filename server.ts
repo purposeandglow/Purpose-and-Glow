@@ -6,10 +6,70 @@ import { GoogleGenAI } from '@google/genai';
 import path from 'path';
 import { fileURLToPath } from 'url';
 
-import { requireAuth, optionalAuth, type AuthRequest } from './src/middleware/auth.ts';
+import type { RequestHandler } from 'express';
+import { requireAdminAuth, type AuthRequest } from './src/middleware/auth.ts';
 import { getOrCreateUser } from './src/db/users.ts';
 import { getSavedLeads, upsertLead, updateLeadStatus } from './src/db/leads.ts';
 import { getChatHistory, saveChatMessage } from './src/db/chat.ts';
+import {
+  createGeminiClient,
+  getGeminiRuntimeConfig,
+  verifyAvailableGeminiModels
+} from './src/lib/geminiConfig.ts';
+import {
+  getAdminFirestoreForInquiries,
+  getAdminFirestoreForRateLimit,
+  getRateLimitCredentialSource,
+  probeFirestoreRateLimitConnectivity
+} from './src/lib/firebase-admin.ts';
+import {
+  DEFAULT_BUSINESS_EMAIL,
+  FirestoreInquiryStore,
+  MemoryInquiryStore,
+  ResilientInquiryStore,
+  isValidInquiryStatusInput,
+  sanitizeInquiryId,
+  toPublicInquiryReceipt,
+  toSafeInquiryLogSummary,
+  validateContactInquiryInput,
+  validateHumanAssessmentInput,
+  type InboundInquiry,
+  type InquiryStatus,
+  type InquiryStore,
+  type InquiryValidationResult
+} from './src/lib/inquiryStore.ts';
+import {
+  ResendEmailNotifier,
+  type InquiryEmailNotifier
+} from './src/lib/resendNotifier.ts';
+import {
+  FirestoreDistributedRateLimitStore,
+  PublicAssessmentRateLimiter,
+  SerializedMemoryRateLimitStore,
+  type RateLimitStore
+} from './src/lib/rateLimiter.ts';
+import {
+  isTurnstileConfigured,
+  verifyTurnstileToken
+} from './src/lib/turnstile.ts';
+import {
+  MAX_JOB_DESC_CHARS,
+  MAX_RESUME_CHARS,
+  MAX_TARGET_TITLE_CHARS,
+  MIN_RESUME_CHARS,
+  PUBLIC_RESUME_SYSTEM_INSTRUCTION,
+  RESUME_ASSESSMENT_RESPONSE_SCHEMA,
+  buildAssessmentPromptPayload,
+  enforceFactualGuardrailsBeforeDisplay,
+  type StructuredResumeAssessment
+} from './src/lib/resumePromptGuard.ts';
+import { MAX_RESUME_FILE_BYTES } from './src/lib/resumeParser.ts';
+import {
+  AssessmentTelemetryTracker,
+  type ServiceInterestKey
+} from './src/lib/assessmentMetrics.ts';
+import { db as pgDb } from './src/db/index.ts';
+import { users as pgUsers, leads as pgLeads, chatMessages as pgChatMessages } from './src/db/schema.ts';
 
 dotenv.config();
 
@@ -18,35 +78,94 @@ const __dirname = path.dirname(__filename);
 const isProduction = process.env.NODE_ENV === 'production';
 const PORT = 3000;
 
-const app = express();
-app.use(express.json({ limit: '2mb' }));
+const MANDATORY_ASSESSMENT_DISCLAIMER =
+  'This complimentary AI assessment provides initial résumé and career guidance only. It does not guarantee interviews, job offers, or employment, and does not fabricate qualifications or work history. For personalized human review by Nicole Gotsch, select Complimentary Human Review or register free via Tally.';
 
-// Shared Gemini AI client (server-side only)
-let aiClient: GoogleGenAI | null = null;
-if (process.env.GEMINI_API_KEY) {
-  aiClient = new GoogleGenAI({
-    apiKey: process.env.GEMINI_API_KEY,
-    httpOptions: {
-      headers: {
-        'User-Agent': 'aistudio-build'
+const ALLOWED_SERVICE_INTEREST_KEYS = new Set<ServiceInterestKey>([
+  'student_50',
+  'revamp_99',
+  'scratch_145',
+  'cover_letter_49',
+  'tailoring_45',
+  'interview_65',
+  'tally_registration',
+  'human_review'
+]);
+
+export interface CreateAppOptions {
+  adminMiddleware?: RequestHandler;
+  aiClientOverride?: GoogleGenAI | null;
+  publicAiEnabledOverride?: boolean;
+  rateLimitStoreOverride?: RateLimitStore;
+  turnstileVerifierOverride?: typeof verifyTurnstileToken;
+  inquiryStoreOverride?: InquiryStore;
+  emailNotifierOverride?: InquiryEmailNotifier;
+  isProductionOverride?: boolean;
+}
+
+export function resolveClientIp(req: express.Request, isProdMode: boolean): string {
+  if (isProdMode) {
+    if (process.env.TRUST_CLOUDFLARE_HEADER === 'true') {
+      const cfIp = req.headers['cf-connecting-ip'];
+      if (typeof cfIp === 'string' && cfIp.trim()) {
+        return cfIp.trim();
       }
     }
-  });
+    // With `app.set('trust proxy', 1)`, Express strips spoofable leftmost X-Forwarded-For entries
+    // and resolves the client IP strictly from the trusted reverse-proxy hop (or direct socket IP).
+    return (req.ip || req.socket?.remoteAddress || 'unknown').trim();
+  }
+
+  const forwardedHeader = req.headers['x-forwarded-for'];
+  return (
+    (typeof forwardedHeader === 'string'
+      ? forwardedHeader.split(',')[0].trim()
+      : Array.isArray(forwardedHeader)
+      ? forwardedHeader[0]?.trim()
+      : undefined) ||
+    req.ip ||
+    req.socket?.remoteAddress ||
+    'unknown'
+  );
 }
 
-// Helper to strip HTML tags from RSS/forum text
-function stripHtml(str: string): string {
-  return (str || '')
-    .replace(/<[^>]+>/g, ' ')
-    .replace(/&amp;/g, '&')
-    .replace(/&lt;/g, '<')
-    .replace(/&gt;/g, '>')
-    .replace(/&quot;/g, '"')
-    .replace(/&#x2F;/g, '/')
-    .replace(/&#x27;/g, "'")
-    .replace(/\s+/g, ' ')
-    .trim();
-}
+export function createApp(options: CreateAppOptions = {}) {
+  const app = express();
+  const trustProxyHops = Number.parseInt(process.env.TRUST_PROXY_HOPS || '1', 10);
+  app.set('trust proxy', Number.isFinite(trustProxyHops) && trustProxyHops >= 0 ? trustProxyHops : 1);
+  app.use(express.json({ limit: '2mb' }));
+
+  const adminGuard: RequestHandler = options.adminMiddleware || requireAdminAuth;
+  const geminiConfig = getGeminiRuntimeConfig();
+  const aiClient: GoogleGenAI | null =
+    options.aiClientOverride !== undefined ? options.aiClientOverride : createGeminiClient();
+  const publicAiEnabled =
+    options.publicAiEnabledOverride !== undefined
+      ? options.publicAiEnabledOverride
+      : geminiConfig.publicAiEnabled;
+
+  const adminFirestoreForRateLimit = getAdminFirestoreForRateLimit();
+  const rateLimitStore: RateLimitStore =
+    options.rateLimitStoreOverride ||
+    (adminFirestoreForRateLimit
+      ? new FirestoreDistributedRateLimitStore(adminFirestoreForRateLimit)
+      : new SerializedMemoryRateLimitStore());
+
+  const rateLimiter = new PublicAssessmentRateLimiter({
+    store: rateLimitStore,
+    policy: geminiConfig.limits,
+    requireDistributedInProduction: true
+  });
+  const assessmentTracker = new AssessmentTelemetryTracker();
+
+  const adminFirestoreForInquiries = getAdminFirestoreForInquiries();
+  const inquiryStore: InquiryStore =
+    options.inquiryStoreOverride ||
+    (adminFirestoreForInquiries
+      ? new ResilientInquiryStore(new FirestoreInquiryStore(adminFirestoreForInquiries))
+      : new MemoryInquiryStore());
+  const emailNotifier: InquiryEmailNotifier =
+    options.emailNotifierOverride || new ResendEmailNotifier();
 
 // In-memory cache for live Reddit feeds (5-minute TTL to prevent rate limits)
 const redditFeedCache: Record<string, { data: any[]; timestamp: number }> = {};
@@ -178,8 +297,8 @@ async function fetchRedditLivePosts(subreddit: string = 'resumes'): Promise<any[
   }
 }
 
-// Live Signal Fetcher: polls live public candidate requests for resume help
-app.get('/api/signals/live-stream', async (req, res) => {
+// Live Signal Fetcher (Admin-Only): polls live public candidate requests for resume help
+app.get('/api/signals/live-stream', adminGuard, async (req, res) => {
   try {
     // Fetch live posts from r/resumes where people are actively asking for help fixing their résumé
     const resumePosts = await fetchRedditLivePosts('resumes');
@@ -202,8 +321,8 @@ app.get('/api/signals/live-stream', async (req, res) => {
   }
 });
 
-// Live ICP Signal Scanner: focused 100% on people needing help fixing their résumé
-app.get('/api/signals/scan-icp', async (req, res) => {
+// Live ICP Signal Scanner (Admin-Only): focused 100% on people needing help fixing their résumé
+app.get('/api/signals/scan-icp', adminGuard, async (req, res) => {
   try {
     const cluster = (req.query.cluster as string) || 'all';
 
@@ -508,8 +627,8 @@ const LINKEDIN_CANDIDATE_POOL: Record<string, any[]> = {
   ]
 };
 
-// Live LinkedIn Scanner endpoint
-app.get('/api/signals/scan-linkedin', (req, res) => {
+// Live LinkedIn Scanner endpoint (Admin-Only)
+app.get('/api/signals/scan-linkedin', adminGuard, (req, res) => {
   try {
     const topic = (req.query.topic as string) || 'all';
     let results: any[] = [];
@@ -538,8 +657,8 @@ app.get('/api/signals/scan-linkedin', (req, res) => {
   }
 });
 
-// Zero-Typing Smart Ingest Auto-Parser: extracts lead info from pasted text automatically
-app.post('/api/signals/parse-paste', (req, res) => {
+// Zero-Typing Smart Ingest Auto-Parser (Admin-Only): extracts lead info from pasted text automatically
+app.post('/api/signals/parse-paste', adminGuard, (req, res) => {
   try {
     const { pastedText } = req.body;
     if (!pastedText || typeof pastedText !== 'string') {
@@ -610,8 +729,8 @@ app.post('/api/signals/parse-paste', (req, res) => {
   }
 });
 
-// Real Live Feed Stream Registry
-app.get('/api/feeds/status', (req, res) => {
+// Real Live Feed Stream Registry (Admin-Only)
+app.get('/api/feeds/status', adminGuard, (req, res) => {
   res.json({
     success: true,
     timestamp: new Date().toISOString(),
@@ -665,8 +784,8 @@ app.get('/api/feeds/status', (req, res) => {
   });
 });
 
-// Live AI / Intelligence Qualifier endpoint
-app.post('/api/signals/qualify-live', async (req, res) => {
+// Live AI / Intelligence Qualifier endpoint (Admin-Only)
+app.post('/api/signals/qualify-live', adminGuard, async (req, res) => {
   try {
     const { rawText, headline, personName } = req.body;
     if (!rawText || typeof rawText !== 'string') {
@@ -703,7 +822,7 @@ Output valid JSON only with keys:
 }`;
 
       const response = await aiClient.models.generateContent({
-        model: 'gemini-3.8-flash',
+        model: geminiConfig.adminModel,
         contents: prompt,
         config: {
           responseMimeType: 'application/json'
@@ -729,183 +848,287 @@ Output valid JSON only with keys:
   }
 });
 
-// Inbound Email Inquiries Store for Website Pop-up Form Fill
-export interface InboundInquiry {
-  id: string;
-  name: string;
-  email: string;
-  phone?: string;
-  service: string;
-  currentRole?: string;
-  targetRole?: string;
-  urgency: 'urgent_48h' | 'standard_week' | 'flexible';
-  message: string;
-  recipientEmail: string;
-  timestamp: string;
-  isRead: boolean;
-  status: 'new' | 'reviewed' | 'responded';
+// Shared handler: Validate -> Deduplicate -> Persist FIRST -> Notify via Resend (never losing submissions)
+async function processInboundInquirySubmission(params: {
+  validation: InquiryValidationResult;
+  idPrefix: 'inq' | 'assess';
+  res: express.Response;
+}) {
+  const { validation, idPrefix, res } = params;
+  if (!validation.ok) {
+    if (validation.skipAsTallyDuplicate) {
+      return res.status(200).json({
+        success: true,
+        duplicate: true,
+        skippedDuplicate: true,
+        message: validation.error
+      });
+    }
+    return res.status(validation.statusCode).json({
+      success: false,
+      errorCode: validation.errorCode,
+      error: validation.error
+    });
+  }
+
+  const businessEmail = (process.env.BUSINESS_EMAIL || DEFAULT_BUSINESS_EMAIL).trim() || DEFAULT_BUSINESS_EMAIL;
+
+  // Duplicate check (prevents double-click bursts or identical re-submissions within 24h)
+  try {
+    const existingDuplicate = await inquiryStore.findRecentDuplicate(
+      validation.dedupeKey,
+      validation.email.trim().toLowerCase(),
+      validation.inquiryType
+    );
+    if (existingDuplicate) {
+      console.info('[INQUIRY DEDUPED]', toSafeInquiryLogSummary(existingDuplicate));
+      return res.json({
+        success: true,
+        id: existingDuplicate.id,
+        duplicate: true,
+        message: `Your recent submission is already saved for ${businessEmail}.`,
+        inquiry: toPublicInquiryReceipt(existingDuplicate, true)
+      });
+    }
+  } catch (err) {
+    console.warn('Duplicate lookup warning (proceeding with save):', err instanceof Error ? err.message : 'lookup error');
+  }
+
+  const nowIso = new Date().toISOString();
+  const inquiryId = sanitizeInquiryId('', idPrefix);
+  const newInquiry: InboundInquiry = {
+    id: inquiryId,
+    ownerEmail: businessEmail,
+    inquiryType: validation.inquiryType,
+    intakeChannel: validation.intakeChannel,
+    name: validation.name,
+    email: validation.email,
+    senderEmailNormalized: validation.email.trim().toLowerCase(),
+    phone: validation.phone,
+    service: validation.service,
+    currentRole: validation.currentRole,
+    targetRole: validation.targetRole,
+    locationState: validation.locationState,
+    preferredIndustry: validation.preferredIndustry,
+    urgency: validation.urgency,
+    message: validation.message,
+    resumeIntakeNote: validation.resumeIntakeNote,
+    recipientEmail: businessEmail,
+    timestamp: nowIso,
+    updatedAt: nowIso,
+    isRead: false,
+    status: 'new',
+    dedupeKey: validation.dedupeKey,
+    notificationStatus: 'pending',
+    notificationProvider: emailNotifier.isConfigured() ? 'resend' : 'none',
+    notificationAttempts: 0
+  };
+
+  let savedInquiry: InboundInquiry;
+  try {
+    savedInquiry = await inquiryStore.createInquiry(newInquiry);
+  } catch (err) {
+    console.error('Failed to persist inquiry:', err instanceof Error ? err.message : 'storage error');
+    return res.status(503).json({
+      success: false,
+      errorCode: 'INQUIRY_PERSISTENCE_UNAVAILABLE',
+      error:
+        'Unable to save your inquiry right now. Please try again shortly or submit directly via Tally (https://tally.so/r/q5a1RY).'
+    });
+  }
+
+  // Attempt Resend email notification AFTER saving, tracking status for admin retry if it fails
+  const notifyResult = await emailNotifier.sendInquiryNotification(savedInquiry);
+  let finalInquiry = savedInquiry;
+  try {
+    const updated = await inquiryStore.updateNotificationResult(savedInquiry.id, {
+      notificationStatus: notifyResult.status,
+      notificationProvider: notifyResult.provider,
+      notificationAttempts: 1,
+      lastNotificationAttemptAt: notifyResult.attemptedAt,
+      notificationId: notifyResult.messageId,
+      notificationError: notifyResult.error
+    });
+    if (updated) {
+      finalInquiry = updated;
+    }
+  } catch (err) {
+    console.warn('Could not update notification status after save:', err instanceof Error ? err.message : 'update error');
+    finalInquiry = {
+      ...savedInquiry,
+      notificationStatus: notifyResult.status,
+      notificationProvider: notifyResult.provider,
+      notificationAttempts: 1,
+      lastNotificationAttemptAt: notifyResult.attemptedAt,
+      notificationId: notifyResult.messageId,
+      notificationError: notifyResult.error
+    };
+  }
+
+  // Non-PII operational log only
+  console.info('[INQUIRY SAVED]', toSafeInquiryLogSummary(finalInquiry, `storage=${inquiryStore.getMode()}`));
+
+  return res.json({
+    success: true,
+    id: finalInquiry.id,
+    duplicate: false,
+    message:
+      finalInquiry.notificationStatus === 'sent'
+        ? `Inquiry saved and notification sent to ${businessEmail}.`
+        : `Inquiry saved securely for Purpose & Glow Career Solutions (${businessEmail}).`,
+    inquiry: toPublicInquiryReceipt(finalInquiry, false)
+  });
 }
 
-const inboundInquiries: InboundInquiry[] = [
-  {
-    id: 'inq-initial-1',
-    name: 'Courtney Morales, CPC',
-    email: 'cmorales.cpc@outlook.com',
-    phone: '(612) 555-0142',
-    service: 'Résumé Revamp ($99)',
-    currentRole: 'Lead Medical Biller & Certified Coder',
-    targetRole: 'RCM Supervisor',
-    urgency: 'urgent_48h',
-    message: 'Need help overturning denial bullet points into quantifiable metrics for an Allina Health application closing this Friday.',
-    recipientEmail: 'purposeandglowcareers@gmail.com',
-    timestamp: new Date(Date.now() - 18 * 60 * 1000).toISOString(),
-    isRead: false,
-    status: 'new'
-  }
-];
-
-// POST /api/contact/email - Pop-up form submission to Nicole's email
-app.post('/api/contact/email', (req, res) => {
+// POST /api/contact/email - Public consultation form submission
+app.post('/api/contact/email', async (req, res) => {
   try {
-    const { name, email, phone, service, currentRole, targetRole, urgency, message, recipientEmail } = req.body;
-    if (!name || !email || !message) {
-      return res.status(400).json({ error: 'Name, email, and message are required' });
-    }
-
-    const businessEmail = process.env.BUSINESS_EMAIL || 'purposeandglowcareers@gmail.com';
-    const inquiry: InboundInquiry = {
-      id: `inq-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`,
-      name: String(name).trim(),
-      email: String(email).trim(),
-      phone: phone ? String(phone).trim() : undefined,
-      service: service || 'Résumé Revamp ($99)',
-      currentRole: currentRole ? String(currentRole).trim() : undefined,
-      targetRole: targetRole ? String(targetRole).trim() : undefined,
-      urgency: urgency || 'standard_week',
-      message: String(message).trim(),
-      recipientEmail: recipientEmail || businessEmail,
-      timestamp: new Date().toISOString(),
-      isRead: false,
-      status: 'new'
-    };
-
-    inboundInquiries.unshift(inquiry);
-    if (inboundInquiries.length > 100) inboundInquiries.pop();
-
-    console.log(`[EMAIL DISPATCH] To: ${inquiry.recipientEmail} | From: ${inquiry.name} <${inquiry.email}> | Service: ${inquiry.service} | Urgency: ${inquiry.urgency}`);
-
-    res.json({
-      success: true,
-      inquiry,
-      message: `Message dispatched successfully to ${inquiry.recipientEmail}`
+    const validation = validateContactInquiryInput((req.body || {}) as Record<string, unknown>);
+    return await processInboundInquirySubmission({
+      validation,
+      idPrefix: 'inq',
+      res
     });
   } catch (err: any) {
-    console.error('Error in /api/contact/email:', err);
-    res.status(500).json({ error: err.message || 'Failed to dispatch email' });
+    console.error('Error in /api/contact/email:', err instanceof Error ? err.message : 'unknown error');
+    return res.status(500).json({ error: 'Failed to process consultation inquiry' });
   }
 });
 
-// POST /api/assessment/submit - Process detailed Free Career & Résumé Assessment
-app.post('/api/assessment/submit', (req, res) => {
+// POST /api/assessment/submit - Process Complimentary Human Review & Assessment Request
+app.post('/api/assessment/submit', async (req, res) => {
   try {
-    const {
-      fullName,
-      email,
-      phone,
-      locationState,
-      educationLevel,
-      currentTitle,
-      yearsExperience,
-      targetTitles,
-      preferredIndustry,
-      workStyle,
-      desiredSalary,
-      linkedInUrl,
-      resumeNotes,
-      primaryAssistance,
-      wantsDiyTips
-    } = req.body;
-
-    if (!fullName || !email) {
-      return res.status(400).json({ error: 'Full name and email are required for assessment' });
-    }
-
-    const businessEmail = process.env.BUSINESS_EMAIL || 'purposeandglowcareers@gmail.com';
-    const inquiryId = `assess-${Date.now()}-${Math.random().toString(36).slice(2, 7)}`;
-
-    const formattedMessage = [
-      `=== FREE CAREER & RÉSUMÉ ASSESSMENT SUBMISSION ===`,
-      `Candidate: ${fullName}`,
-      `Email: ${email} | Phone: ${phone || 'N/A'}`,
-      `Location: ${locationState || 'Not specified'}`,
-      `Current Title: ${currentTitle || 'N/A'} (${yearsExperience || 'N/A'})`,
-      `Target Role(s): ${targetTitles || 'N/A'} in ${preferredIndustry || 'N/A'}`,
-      `Education: ${educationLevel || 'N/A'}`,
-      `Work Preference: ${workStyle || 'N/A'} | Target Salary: ${desiredSalary || 'N/A'}`,
-      `LinkedIn: ${linkedInUrl || 'Not provided'}`,
-      `Selected Service: ${primaryAssistance || 'Free Assessment'}`,
-      `Include DIY Pointers: ${wantsDiyTips ? 'Yes' : 'No'}`,
-      `Notes / Current Résumé Context:`,
-      resumeNotes || '(No additional notes provided)'
-    ].join('\n');
-
-    const assessmentInquiry: InboundInquiry = {
-      id: inquiryId,
-      name: String(fullName).trim(),
-      email: String(email).trim(),
-      phone: phone ? String(phone).trim() : undefined,
-      service: `Assessment: ${primaryAssistance || 'Free Career & Résumé Review'}`,
-      currentRole: currentTitle ? String(currentTitle).trim() : undefined,
-      targetRole: targetTitles ? String(targetTitles).trim() : undefined,
-      urgency: 'urgent_48h',
-      message: formattedMessage,
-      recipientEmail: businessEmail,
-      timestamp: new Date().toISOString(),
-      isRead: false,
-      status: 'new'
-    };
-
-    inboundInquiries.unshift(assessmentInquiry);
-    if (inboundInquiries.length > 100) inboundInquiries.pop();
-
-    console.log(`[ASSESSMENT DISPATCH] Transmitted assessment for ${assessmentInquiry.name} <${assessmentInquiry.email}> to ${businessEmail}`);
-
-    res.json({
-      success: true,
-      id: inquiryId,
-      message: `Assessment successfully submitted and queued for review at ${businessEmail}`,
-      inquiry: assessmentInquiry
+    const validation = validateHumanAssessmentInput((req.body || {}) as Record<string, unknown>);
+    return await processInboundInquirySubmission({
+      validation,
+      idPrefix: 'assess',
+      res
     });
   } catch (err: any) {
-    console.error('Error in /api/assessment/submit:', err);
-    res.status(500).json({ error: err.message || 'Failed to submit assessment' });
+    console.error('Error in /api/assessment/submit:', err instanceof Error ? err.message : 'unknown error');
+    return res.status(500).json({ error: 'Failed to submit complimentary review request' });
   }
 });
 
-// GET /api/contact/inquiries - Fetch all inquiries for the admin notification center
-app.get('/api/contact/inquiries', (_req, res) => {
-  res.json({
-    success: true,
-    count: inboundInquiries.length,
-    unreadCount: inboundInquiries.filter(i => !i.isRead).length,
-    inquiries: inboundInquiries
-  });
-});
+// GET /api/contact/inquiries - Admin-Only fetch all inquiries for notification center & Inquiry Management
+app.get('/api/contact/inquiries', adminGuard, async (req: AuthRequest, res) => {
+  try {
+    const allInquiries = await inquiryStore.listInquiries(200);
+    const statusFilter = typeof req.query.status === 'string' ? req.query.status.trim().toLowerCase() : '';
+    const typeFilter = typeof req.query.type === 'string' ? req.query.type.trim().toLowerCase() : '';
 
-// PATCH /api/contact/inquiries/:id/read - Mark inquiry read/unread
-app.patch('/api/contact/inquiries/:id/read', (req, res) => {
-  const { id } = req.params;
-  const { isRead } = req.body;
-  const inq = inboundInquiries.find(i => i.id === id);
-  if (inq) {
-    inq.isRead = isRead !== undefined ? Boolean(isRead) : true;
-    return res.json({ success: true, inquiry: inq });
+    const filtered = allInquiries.filter((inq) => {
+      if (statusFilter && statusFilter !== 'all' && inq.status !== statusFilter) return false;
+      if (typeFilter && typeFilter !== 'all' && inq.inquiryType !== typeFilter) return false;
+      return true;
+    });
+
+    const statusCounts: Record<InquiryStatus, number> = {
+      new: 0,
+      contacted: 0,
+      in_progress: 0,
+      completed: 0,
+      closed: 0
+    };
+    for (const item of allInquiries) {
+      statusCounts[item.status] = (statusCounts[item.status] || 0) + 1;
+    }
+
+    const storageWarning =
+      inquiryStore instanceof ResilientInquiryStore ? inquiryStore.getFallbackReason() : null;
+
+    return res.json({
+      success: true,
+      storageMode: inquiryStore.getMode(),
+      ...(storageWarning ? { storageWarning } : {}),
+      emailConfigured: emailNotifier.isConfigured(),
+      missingEmailConfig: emailNotifier.getMissingConfigReasons(),
+      count: filtered.length,
+      totalCount: allInquiries.length,
+      unreadCount: allInquiries.filter((i) => !i.isRead).length,
+      statusCounts,
+      inquiries: filtered
+    });
+  } catch (err: any) {
+    console.error('Error listing inquiries:', err instanceof Error ? err.message : 'unknown error');
+    return res.status(500).json({ error: 'Failed to load inquiries' });
   }
-  res.status(404).json({ error: 'Inquiry not found' });
 });
 
-// 1. Sync authenticated Firebase user to Cloud SQL users table
-app.post('/api/auth/sync', requireAuth, async (req: AuthRequest, res) => {
+// PATCH /api/contact/inquiries/:id/read - Admin-Only mark inquiry read/unread
+app.patch('/api/contact/inquiries/:id/read', adminGuard, async (req: AuthRequest, res) => {
+  try {
+    const { id } = req.params;
+    const { isRead } = req.body || {};
+    const updated = await inquiryStore.updateInquiryStatus(id, {
+      isRead: isRead !== undefined ? Boolean(isRead) : true
+    });
+    if (!updated) {
+      return res.status(404).json({ error: 'Inquiry not found' });
+    }
+    return res.json({ success: true, inquiry: updated });
+  } catch (err: any) {
+    return res.status(500).json({ error: 'Failed to update inquiry read state' });
+  }
+});
+
+// PATCH /api/contact/inquiries/:id/status - Admin-Only update inquiry workflow status & optional admin notes
+app.patch('/api/contact/inquiries/:id/status', adminGuard, async (req: AuthRequest, res) => {
+  try {
+    const { id } = req.params;
+    const { status, isRead, adminNotes } = req.body || {};
+
+    if (!isValidInquiryStatusInput(status)) {
+      return res.status(400).json({
+        error: 'Invalid status. Allowed values: new, contacted, in_progress, completed, closed.'
+      });
+    }
+
+    const updated = await inquiryStore.updateInquiryStatus(id, {
+      status,
+      isRead: isRead !== undefined ? Boolean(isRead) : status !== 'new' ? true : undefined,
+      adminNotes: typeof adminNotes === 'string' ? adminNotes : undefined
+    });
+    if (!updated) {
+      return res.status(404).json({ error: 'Inquiry not found' });
+    }
+    return res.json({ success: true, inquiry: updated });
+  } catch (err: any) {
+    return res.status(500).json({ error: 'Failed to update inquiry status' });
+  }
+});
+
+// POST /api/contact/inquiries/:id/retry-notification - Admin-Only retry email delivery for an inquiry
+app.post('/api/contact/inquiries/:id/retry-notification', adminGuard, async (req: AuthRequest, res) => {
+  try {
+    const { id } = req.params;
+    const existing = await inquiryStore.getInquiryById(id);
+    if (!existing) {
+      return res.status(404).json({ error: 'Inquiry not found' });
+    }
+
+    const notifyResult = await emailNotifier.sendInquiryNotification(existing);
+    const updated = await inquiryStore.updateNotificationResult(existing.id, {
+      notificationStatus: notifyResult.status,
+      notificationProvider: notifyResult.provider,
+      notificationAttempts: (existing.notificationAttempts || 0) + 1,
+      lastNotificationAttemptAt: notifyResult.attemptedAt,
+      notificationId: notifyResult.messageId,
+      notificationError: notifyResult.error
+    });
+
+    return res.json({
+      success: notifyResult.status === 'sent',
+      result: notifyResult,
+      inquiry: updated || existing
+    });
+  } catch (err: any) {
+    return res.status(500).json({ error: 'Failed to retry email notification' });
+  }
+});
+
+// 1. Sync authenticated Admin Firebase user to Cloud SQL users table (Admin-Only)
+app.post('/api/auth/sync', adminGuard, async (req: AuthRequest, res) => {
   try {
     const { uid, email } = req.user!;
     const { displayName, photoURL } = req.body;
@@ -917,8 +1140,8 @@ app.post('/api/auth/sync', requireAuth, async (req: AuthRequest, res) => {
   }
 });
 
-// 2. Fetch saved leads from Cloud SQL database
-app.get('/api/leads/saved', optionalAuth, async (req: AuthRequest, res) => {
+// 2. Fetch saved leads (Admin-Only)
+app.get('/api/leads/saved', adminGuard, async (req: AuthRequest, res) => {
   try {
     const userId = req.user?.uid;
     const leadsList = await getSavedLeads(userId);
@@ -929,8 +1152,8 @@ app.get('/api/leads/saved', optionalAuth, async (req: AuthRequest, res) => {
   }
 });
 
-// 3. Upsert / Save a lead to Cloud SQL database
-app.post('/api/leads/save', optionalAuth, async (req: AuthRequest, res) => {
+// 3. Upsert / Save a lead (Admin-Only)
+app.post('/api/leads/save', adminGuard, async (req: AuthRequest, res) => {
   try {
     const userId = req.user?.uid || null;
     const leadData = {
@@ -945,8 +1168,8 @@ app.post('/api/leads/save', optionalAuth, async (req: AuthRequest, res) => {
   }
 });
 
-// 4. Update lead status in Cloud SQL
-app.patch('/api/leads/status', optionalAuth, async (req: AuthRequest, res) => {
+// 4. Update lead status (Admin-Only)
+app.patch('/api/leads/status', adminGuard, async (req: AuthRequest, res) => {
   try {
     const { leadId, status, notes } = req.body;
     if (!leadId || !status) {
@@ -960,8 +1183,8 @@ app.patch('/api/leads/status', optionalAuth, async (req: AuthRequest, res) => {
   }
 });
 
-// 5. Gemini Multi-Turn Diagnostic Copilot Chat with PostgreSQL Persistence
-app.post('/api/copilot/chat', optionalAuth, async (req: AuthRequest, res) => {
+// 5. Gemini Multi-Turn Diagnostic Copilot Chat (Admin-Only)
+app.post('/api/copilot/chat', adminGuard, async (req: AuthRequest, res) => {
   try {
     const userId = req.user?.uid || null;
     const { message, history = [], currentLead } = req.body;
@@ -1038,7 +1261,7 @@ User Request: ${message}`;
     });
 
     const response = await aiClient.models.generateContent({
-      model: 'gemini-3.8-flash',
+      model: geminiConfig.adminModel,
       contents,
       config: {
         systemInstruction
@@ -1065,8 +1288,8 @@ User Request: ${message}`;
   }
 });
 
-// 6. Fetch Copilot chat history from PostgreSQL
-app.get('/api/copilot/history', optionalAuth, async (req: AuthRequest, res) => {
+// 6. Fetch Copilot chat history (Admin-Only)
+app.get('/api/copilot/history', adminGuard, async (req: AuthRequest, res) => {
   try {
     const userId = req.user?.uid || null;
     const history = await getChatHistory(userId || undefined);
@@ -1076,6 +1299,411 @@ app.get('/api/copilot/history', optionalAuth, async (req: AuthRequest, res) => {
     res.status(500).json({ error: err.message || 'Failed to fetch history' });
   }
 });
+
+// 7. Admin-Only System & Gemini Production Model Verification
+app.get('/api/admin/system/gemini-models', adminGuard, async (_req: AuthRequest, res) => {
+  const runtime = getGeminiRuntimeConfig();
+  const verification = await verifyAvailableGeminiModels(aiClient, runtime);
+  res.json({
+    success: true,
+    publicAiEnabled: runtime.publicAiEnabled,
+    limits: runtime.limits,
+    verification
+  });
+});
+
+// 8. Admin-Only Pre-Migration Server Data Snapshot (Read-Only Backup)
+app.get('/api/admin/backup/snapshot', adminGuard, async (_req: AuthRequest, res) => {
+  const postgresConfigured = Boolean(process.env.SQL_HOST && process.env.SQL_DB_NAME);
+  let postgresReachable = false;
+  let dbUsers: any[] = [];
+  let dbLeads: any[] = [];
+  let dbChatMessages: any[] = [];
+  let warning: string | undefined;
+
+  if (postgresConfigured && pgDb) {
+    try {
+      dbUsers = await pgDb.select().from(pgUsers);
+      dbLeads = await pgDb.select().from(pgLeads);
+      dbChatMessages = await pgDb.select().from(pgChatMessages);
+      postgresReachable = true;
+    } catch (err: any) {
+      warning = `PostgreSQL unreachable during backup snapshot: ${err?.message || 'Unknown error'}`;
+    }
+  } else {
+    warning = 'No external PostgreSQL (SQL_HOST/SQL_DB_NAME) configured; exporting in-memory server records only.';
+  }
+
+  const persistedInquiries = await inquiryStore.listInquiries(200).catch(() => []);
+  res.json({
+    success: true,
+    snapshot: {
+      capturedAt: new Date().toISOString(),
+      postgresConfigured,
+      postgresReachable,
+      inquiryStorageMode: inquiryStore.getMode(),
+      inquiries: persistedInquiries,
+      leads: dbLeads.length > 0 ? dbLeads : await getSavedLeads(),
+      chatMessages: dbChatMessages.length > 0 ? dbChatMessages : await getChatHistory(),
+      users: dbUsers,
+      warning
+    }
+  });
+});
+
+// Shared grounded Gemini assessment helper (no persistence, no contact PII logging)
+async function runGeminiResumeAssessment(params: {
+  resumeText: string;
+  targetJobTitle: string;
+  industry?: string;
+  jobDescription?: string;
+  includeAdminWarnings?: boolean;
+}): Promise<{ assessment: StructuredResumeAssessment; injectionDetected: boolean }> {
+  if (!aiClient) {
+    throw new Error('GEMINI_API_KEY is not configured in the server environment.');
+  }
+
+  const { promptText, injectionDetected } = buildAssessmentPromptPayload({
+    ...params,
+    approvedTurnaroundNote: process.env.APPROVED_SERVICE_TURNAROUND?.trim() || undefined
+  });
+
+  const response = await aiClient.models.generateContent({
+    model: geminiConfig.publicModel,
+    contents: promptText,
+    config: {
+      systemInstruction: PUBLIC_RESUME_SYSTEM_INSTRUCTION,
+      responseMimeType: 'application/json',
+      responseSchema: RESUME_ASSESSMENT_RESPONSE_SCHEMA
+    }
+  });
+
+  const rawJson = response.text || '{}';
+  const parsed = JSON.parse(rawJson);
+
+  const toStringArray = (val: unknown, fallback: string[]) =>
+    Array.isArray(val)
+      ? val.map((item) => String(item || '').trim()).filter(Boolean).slice(0, 6)
+      : fallback;
+
+  const examples = Array.isArray(parsed.beforeAfterExamples)
+    ? parsed.beforeAfterExamples
+        .filter((ex: any) => ex && typeof ex === 'object')
+        .slice(0, 3)
+        .map((ex: any) => ({
+          originalContext: String(ex.originalContext || '').trim(),
+          improvedExample: String(ex.improvedExample || '').trim(),
+          whyItWorks: String(ex.whyItWorks || '').trim()
+        }))
+        .filter((ex: any) => ex.originalContext && ex.improvedExample)
+    : [];
+
+  const assessment: StructuredResumeAssessment = {
+    overallEvaluation:
+      typeof parsed.overallEvaluation === 'string' && parsed.overallEvaluation.trim()
+        ? parsed.overallEvaluation.trim()
+        : 'Your résumé already shows meaningful hands-on experience. The clearest opportunity here is sharpening how your day-to-day responsibilities read so a hiring manager quickly sees your transferable workflow strengths without overstating your prior scope.',
+    atsCompatibilityRecommendations: toStringArray(parsed.atsCompatibilityRecommendations, [
+      'ATS capabilities and employer configurations vary, so using standard section headings (Professional Summary, Work Experience, Skills, Education) and clean single-column text helps keep your résumé easy to read across varied systems and for human reviewers.'
+    ]),
+    professionalSummarySuggestions: toStringArray(parsed.professionalSummarySuggestions, [
+      'Ready-to-Adapt Summary: Start with a 2–3 sentence summary aligned to your target role using only your documented years of experience, verified tools, and transferable workflow strengths—without inventing supervisory authority.'
+    ]),
+    workExperienceRecommendations: toStringArray(parsed.workExperienceRecommendations, [
+      'Preserve both your factual scope and responsibility level while clarifying what each workflow involves—avoid inferring undocumented outcomes, and keep bullets clear without numbers unless a figure is directly verifiable from your own work.'
+    ]),
+    skillsAndKeywordRecommendations: toStringArray(parsed.skillsAndKeywordRecommendations, [
+      'Group the tools, workflows, and credentials already supported by your résumé into a clean Skills section, and keep any skills you still plan to build clearly separated.'
+    ]),
+    formattingAndReadabilitySuggestions: toStringArray(parsed.formattingAndReadabilitySuggestions, [
+      'Bold job titles and section headings where appropriate, and keep bullet points unbolded and concise at 1–2 lines so your core workflows stand out.'
+    ]),
+    practicalJobSearchRecommendations: toStringArray(parsed.practicalJobSearchRecommendations, [
+      'Prioritize alternative job titles matched to your experience level and stated career direction, mirror truthful keywords from postings, tailor your summary to each employer, and prepare honest interview examples highlighting your transferable collaboration and workflow reliability.'
+    ]),
+    beforeAfterExamples: examples,
+    suggestedServiceFocus:
+      typeof parsed.suggestedServiceFocus === 'string' && parsed.suggestedServiceFocus.trim()
+        ? parsed.suggestedServiceFocus.trim()
+        : 'Everything above is yours to apply right away at no cost. If you ever want optional 1-on-1 collaboration later, Purpose & Glow offers Résumé Revamp ($99), Created From Scratch ($145), Job-Specific Tailoring ($45), Targeted Cover Letter ($49), Student Services ($50), and Interview Preparation ($65)—or complimentary human review via Tally anytime.',
+    disclaimer: MANDATORY_ASSESSMENT_DISCLAIMER
+  };
+
+  const guardedAssessment = enforceFactualGuardrailsBeforeDisplay({
+    resumeText: params.resumeText,
+    targetJobTitle: params.targetJobTitle,
+    assessment,
+    includeAdminWarnings: params.includeAdminWarnings
+  });
+
+  return { assessment: guardedAssessment, injectionDetected };
+}
+
+// 9. Public AI Assessment Status & Safe Limits (No Secrets Exposed)
+app.get('/api/public/assessment-status', (_req, res) => {
+  res.json({
+    publicAiEnabled,
+    turnstileConfigured: isTurnstileConfigured(),
+    turnstileSiteKey: process.env.TURNSTILE_SITE_KEY?.trim() || null,
+    maxFileBytes: MAX_RESUME_FILE_BYTES,
+    minChars: MIN_RESUME_CHARS,
+    maxChars: MAX_RESUME_CHARS,
+    maxJobDescChars: MAX_JOB_DESC_CHARS,
+    limits: geminiConfig.limits,
+    tallyUrl: 'https://tally.so/r/q5a1RY'
+  });
+});
+
+// 10. Public AI Résumé Assessment Endpoint (Gated by PUBLIC_AI_ENABLED, Consent, Turnstile, & Concurrency-Safe Limits)
+app.post('/api/public/resume-assessment', async (req, res) => {
+  if (!publicAiEnabled) {
+    assessmentTracker.recordBlockedDisabled();
+    return res.status(503).json({
+      success: false,
+      errorCode: 'PUBLIC_AI_DISABLED',
+      error:
+        'Public AI résumé assessment is currently paused pre-launch. Complimentary personal human review and Tally registration remain open.'
+    });
+  }
+
+  const {
+    resumeText,
+    targetJobTitle,
+    industry,
+    jobDescription,
+    consentGiven,
+    turnstileToken
+  } = req.body || {};
+
+  if (consentGiven !== true) {
+    return res.status(400).json({
+      success: false,
+      errorCode: 'CONSENT_REQUIRED',
+      error: 'Explicit visitor consent is required before sending résumé text for AI review.'
+    });
+  }
+
+  const effectiveIsProd = options.isProductionOverride ?? isProduction;
+
+  const normalizedTitle = typeof targetJobTitle === 'string' ? targetJobTitle.trim() : '';
+  if (normalizedTitle.length < 2 || normalizedTitle.length > MAX_TARGET_TITLE_CHARS) {
+    return res.status(400).json({
+      success: false,
+      errorCode: 'TARGET_TITLE_INVALID',
+      error: `Please enter a target job title between 2 and ${MAX_TARGET_TITLE_CHARS} characters before submitting.`
+    });
+  }
+
+  const normalizedIndustry = typeof industry === 'string' ? industry.trim() : '';
+  if (normalizedIndustry.length > 120) {
+    return res.status(400).json({
+      success: false,
+      errorCode: 'INDUSTRY_TOO_LONG',
+      error: 'Target industry selection must be 120 characters or less.'
+    });
+  }
+
+  const normalizedJobDesc = typeof jobDescription === 'string' ? jobDescription.trim() : '';
+  if (normalizedJobDesc.length > MAX_JOB_DESC_CHARS) {
+    return res.status(400).json({
+      success: false,
+      errorCode: 'JOB_DESC_TOO_LONG',
+      error: `Optional job description must be ${MAX_JOB_DESC_CHARS.toLocaleString()} characters or less.`
+    });
+  }
+
+  const normalizedResume = typeof resumeText === 'string' ? resumeText.trim() : '';
+  if (normalizedResume.length < MIN_RESUME_CHARS || normalizedResume.length > MAX_RESUME_CHARS) {
+    return res.status(400).json({
+      success: false,
+      errorCode: 'INVALID_RESUME_LENGTH',
+      error: `Résumé text must be between ${MIN_RESUME_CHARS} and ${MAX_RESUME_CHARS.toLocaleString()} characters.`
+    });
+  }
+
+  const clientIp = resolveClientIp(req, effectiveIsProd);
+
+  if (
+    effectiveIsProd &&
+    !options.turnstileVerifierOverride &&
+    !isTurnstileConfigured() &&
+    process.env.ALLOW_PUBLIC_AI_WITHOUT_TURNSTILE !== 'true'
+  ) {
+    assessmentTracker.recordFailed('Turnstile configuration required in production');
+    return res.status(503).json({
+      success: false,
+      errorCode: 'TURNSTILE_REQUIRED',
+      error:
+        'Bot verification must be configured before public AI launch. Complimentary human review and Tally remain available.'
+    });
+  }
+
+  const verifyTurnstile = options.turnstileVerifierOverride || verifyTurnstileToken;
+  const turnstileCheck = await verifyTurnstile(turnstileToken, clientIp);
+  if (turnstileCheck.configured && !turnstileCheck.verified) {
+    assessmentTracker.recordFailed('Turnstile verification rejected');
+    return res.status(403).json({
+      success: false,
+      errorCode: 'TURNSTILE_FAILED',
+      error: turnstileCheck.reason || 'Bot verification challenge failed. Please try again.'
+    });
+  }
+
+  let rateDecision;
+  try {
+    rateDecision = await rateLimiter.checkAndConsume({
+      rawIp: clientIp,
+      isProduction: effectiveIsProd
+    });
+  } catch (err: unknown) {
+    assessmentTracker.recordFailed('Distributed rate limiter unavailable');
+    return res.status(503).json({
+      success: false,
+      errorCode: 'DISTRIBUTED_LIMITER_UNAVAILABLE',
+      error:
+        'Assessment quota verification is temporarily unavailable. Complimentary human review and Tally registration remain open.'
+    });
+  }
+
+  if (!rateDecision.allowed) {
+    assessmentTracker.recordRateLimited(rateDecision.scope || 'limit');
+    if (rateDecision.scope === 'distributed_store_required') {
+      return res.status(503).json({
+        success: false,
+        errorCode: 'DISTRIBUTED_LIMITER_REQUIRED',
+        error: rateDecision.reason
+      });
+    }
+    if (rateDecision.retryAfterSeconds) {
+      res.setHeader('Retry-After', String(rateDecision.retryAfterSeconds));
+    }
+    return res.status(429).json({
+      success: false,
+      errorCode: 'RATE_LIMITED',
+      scope: rateDecision.scope,
+      retryAfterSeconds: rateDecision.retryAfterSeconds,
+      error:
+        rateDecision.reason ||
+        'Complimentary AI assessment limit reached. You can request a personal human review or register via Tally anytime.'
+    });
+  }
+
+  const categoryLabel =
+    typeof industry === 'string' && industry.trim() ? industry.trim() : normalizedTitle;
+  assessmentTracker.recordRequested(categoryLabel);
+
+  try {
+    const { assessment } = await runGeminiResumeAssessment({
+      resumeText: normalizedResume,
+      targetJobTitle: normalizedTitle,
+      industry: typeof industry === 'string' ? industry : undefined,
+      jobDescription: typeof jobDescription === 'string' ? jobDescription : undefined,
+      includeAdminWarnings: false
+    });
+
+    assessmentTracker.recordCompleted(categoryLabel);
+    return res.json({
+      success: true,
+      assessment
+    });
+  } catch (err: any) {
+    const message = err instanceof Error ? err.message : 'AI assessment generation failed';
+    assessmentTracker.recordFailed(message);
+    const statusCode = /GEMINI_API_KEY/i.test(message) ? 503 : 500;
+    return res.status(statusCode).json({
+      success: false,
+      errorCode: statusCode === 503 ? 'AI_UNAVAILABLE' : 'ASSESSMENT_FAILED',
+      error:
+        statusCode === 503
+          ? 'AI assessment engine is not currently active on this server. Personal human review remains available.'
+          : 'Unable to complete the AI assessment right now. Please try again or request a complimentary human review.'
+    });
+  }
+});
+
+// 11. Public Anonymous Service-Interest / Tally Click Telemetry (Zero PII)
+app.post('/api/public/assessment-event', (req, res) => {
+  const { eventKey } = req.body || {};
+  if (typeof eventKey !== 'string' || !ALLOWED_SERVICE_INTEREST_KEYS.has(eventKey as ServiceInterestKey)) {
+    return res.status(400).json({
+      success: false,
+      error: 'Invalid or unsupported assessment event key.'
+    });
+  }
+
+  assessmentTracker.recordConversionOrInterest(eventKey as ServiceInterestKey);
+  return res.json({ success: true });
+});
+
+// 12. Admin-Only Pre-Launch Résumé Assessment Test Endpoint (Allows Testing While PUBLIC_AI_ENABLED=false)
+app.post('/api/admin/assessments/preview-test', adminGuard, async (req: AuthRequest, res) => {
+  const { resumeText, targetJobTitle, industry, jobDescription } = req.body || {};
+  const normalizedTitle = typeof targetJobTitle === 'string' ? targetJobTitle.trim() : '';
+  const normalizedResume = typeof resumeText === 'string' ? resumeText.trim() : '';
+
+  if (normalizedTitle.length < 2) {
+    return res.status(400).json({ error: 'Target job title is required.' });
+  }
+  if (normalizedResume.length < MIN_RESUME_CHARS || normalizedResume.length > MAX_RESUME_CHARS) {
+    return res.status(400).json({
+      error: `Résumé text must be between ${MIN_RESUME_CHARS} and ${MAX_RESUME_CHARS.toLocaleString()} characters.`
+    });
+  }
+
+  try {
+    const { assessment, injectionDetected } = await runGeminiResumeAssessment({
+      resumeText: normalizedResume,
+      targetJobTitle: normalizedTitle,
+      industry: typeof industry === 'string' ? industry : undefined,
+      jobDescription: typeof jobDescription === 'string' ? jobDescription : undefined,
+      includeAdminWarnings: true
+    });
+    return res.json({
+      success: true,
+      adminPreviewMode: true,
+      publicAiEnabled,
+      injectionSignalFlagged: injectionDetected,
+      assessment
+    });
+  } catch (err: any) {
+    const message = err instanceof Error ? err.message : 'Admin preview test failed';
+    const statusCode = /GEMINI_API_KEY/i.test(message) ? 503 : 500;
+    return res.status(statusCode).json({
+      success: false,
+      error: message
+    });
+  }
+});
+
+// 13. Admin-Only Assessment Activity & Readiness Metrics
+app.get('/api/admin/assessments/metrics', adminGuard, async (req: AuthRequest, res) => {
+  const includeProbe = req.query.probe === '1';
+  const firestoreProbe = includeProbe ? await probeFirestoreRateLimitConnectivity(adminFirestoreForRateLimit) : undefined;
+  res.json({
+    success: true,
+    publicAiEnabled,
+    turnstileConfigured: isTurnstileConfigured(),
+    turnstileSiteKeyConfigured: Boolean(process.env.TURNSTILE_SITE_KEY?.trim()),
+    rateLimitStorageMode: rateLimiter.getStorageMode(),
+    inquiryStorageMode: inquiryStore.getMode(),
+    emailNotificationConfigured: emailNotifier.isConfigured(),
+    credentialSource: getRateLimitCredentialSource(),
+    ...(firestoreProbe ? { firestoreProbe } : {}),
+    limits: geminiConfig.limits,
+    models: {
+      publicModel: geminiConfig.publicModel,
+      adminModel: geminiConfig.adminModel,
+      hasApiKey: geminiConfig.hasApiKey
+    },
+    metrics: assessmentTracker.getSnapshot()
+  });
+});
+
+  return { app, fetchRedditLivePosts };
+}
+
+// Re-export InboundInquiry type for downstream consumers
+export type { InboundInquiry };
 
 function formatTimeAgo(date: Date): string {
   const diffMs = Date.now() - date.getTime();
@@ -1110,6 +1738,7 @@ function extractYearsExperience(text: string): number {
 
 // Mount Vite middleware in development, or serve static dist in production
 async function startServer() {
+  const { app, fetchRedditLivePosts } = createApp();
   const httpServer = http.createServer(app);
 
   if (!isProduction) {
@@ -1136,7 +1765,10 @@ async function startServer() {
   });
 }
 
-startServer().catch((err) => {
-  console.error('Failed to start server:', err);
-  process.exit(1);
-});
+if (process.env.VITEST !== 'true' && process.env.NODE_ENV !== 'test') {
+  startServer().catch((err) => {
+    console.error('Failed to start server:', err);
+    process.exit(1);
+  });
+}
+

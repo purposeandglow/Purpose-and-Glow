@@ -1,5 +1,6 @@
-import React, { useState } from 'react';
+import React, { useState, useCallback } from 'react';
 import { BookOpen, Check, ArrowRight, X, Sparkles, FileText, CheckSquare, Target, ExternalLink, CheckCircle2 } from 'lucide-react';
+import { useDialogAccessibility } from '../hooks/useDialogAccessibility';
 
 interface ArticleItem {
   id: string;
@@ -143,6 +144,8 @@ interface CareerResourcesSectionProps {
 
 export function CareerResourcesSection({ isDarkMode = false }: CareerResourcesSectionProps) {
   const [activeArticle, setActiveArticle] = useState<ArticleItem | null>(null);
+  const closeArticle = useCallback(() => setActiveArticle(null), []);
+  const articleDialogRef = useDialogAccessibility(Boolean(activeArticle), closeArticle, true);
 
   return (
     <section className="block" id="resources" data-sect data-label="Career Resources" aria-labelledby="resTitle">
@@ -233,13 +236,16 @@ export function CareerResourcesSection({ isDarkMode = false }: CareerResourcesSe
         {/* Article Full Detail Modal */}
         {activeArticle && (
           <div
-            role="dialog"
-            aria-modal="true"
             className="fixed inset-0 z-[9999] flex items-center justify-center p-3 sm:p-5 bg-black/75 backdrop-blur-sm"
-            onClick={() => setActiveArticle(null)}
+            onClick={closeArticle}
           >
             <div
-              className={`relative w-full max-w-2xl my-auto rounded-2xl border shadow-2xl overflow-hidden ${
+              ref={articleDialogRef}
+              tabIndex={-1}
+              role="dialog"
+              aria-modal="true"
+              aria-labelledby="career-guide-modal-title"
+              className={`relative w-full max-w-2xl my-auto rounded-2xl border shadow-2xl overflow-hidden outline-none ${
                 isDarkMode ? 'bg-[#121624] border-pink-500/30 text-slate-100' : 'bg-white border-pink-200 text-slate-900'
               }`}
               onClick={(e) => e.stopPropagation()}
@@ -249,11 +255,13 @@ export function CareerResourcesSection({ isDarkMode = false }: CareerResourcesSe
                   <span className="text-[10px] tracking-wider uppercase font-semibold text-pink-200">
                     {activeArticle.category} · {activeArticle.readTime}
                   </span>
-                  <h4 className="text-lg font-bold">{activeArticle.title}</h4>
+                  <h4 id="career-guide-modal-title" className="text-lg font-bold">{activeArticle.title}</h4>
                 </div>
                 <button
-                  onClick={() => setActiveArticle(null)}
-                  className="w-8 h-8 rounded-lg bg-white/10 hover:bg-white/20 flex items-center justify-center text-white"
+                  type="button"
+                  onClick={closeArticle}
+                  aria-label="Close career guide dialog"
+                  className="w-8 h-8 rounded-lg bg-white/15 hover:bg-white/25 flex items-center justify-center text-white cursor-pointer"
                 >
                   <X className="w-4 h-4" />
                 </button>

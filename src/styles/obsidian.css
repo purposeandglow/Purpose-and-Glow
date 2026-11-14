@@ -35,8 +35,31 @@ html.dark select option, body.dark select option, .dark select option {
 }
 html.dark kbd, body.dark kbd, .dark kbd {
   background: #161922;
-  color: #F06292;
+  color: #F48FB1;
   border-color: #F06292;
+}
+html.dark .btn-ink,
+html.dark .skip,
+html.dark .mh-email-btn:hover,
+html.dark .sq:hover,
+html.dark .copy:hover,
+html.dark .copy.done,
+html.dark .to-top,
+html.dark .pf-new,
+html.dark .cmp .flag,
+html.dark .tick .tip,
+html.dark .star-btn[aria-pressed="true"] {
+  background: #C2185B;
+  border-color: #C2185B;
+  color: #FFFFFF;
+}
+html.dark .btn-ink:hover,
+html.dark .to-top:hover {
+  background: #9C1450;
+  border-color: #9C1450;
+}
+html.dark .avail {
+  color: #F48FB1;
 }
 *,*::before,*::after{box-sizing:border-box}
 html{scroll-behavior:smooth;scroll-padding-top:110px;-webkit-text-size-adjust:100%;overflow-x:hidden;max-width:100%;width:100%}
@@ -442,12 +465,16 @@ kbd{font-family:var(--sans);font-size:11px;font-weight:600;border:1px solid var(
 .field textarea{min-height:110px;resize:vertical;line-height:1.6}
 .field input:hover,.field select:hover,.field textarea:hover{border-bottom-color:var(--red)}
 .field input[aria-invalid="true"]{border-bottom:2px solid var(--red)}
+.form-consent{display:flex;align-items:flex-start;gap:10px;margin-top:var(--s3);font-family:var(--sans);font-size:13px;line-height:1.5;color:var(--ink-2);cursor:pointer}
+.form-consent input[type="checkbox"]{margin-top:3px;width:16px;height:16px;accent-color:var(--red);flex-shrink:0;cursor:pointer}
+.form-consent button.ul{font:inherit;font-weight:600;padding:0}
 .form-foot{display:flex;align-items:center;justify-content:space-between;gap:var(--s3);flex-wrap:wrap;margin-top:var(--s4)}
 .form-status{font-family:var(--sans);font-size:14px;color:var(--ink-2);min-height:1.4em}
 .form-status.err{color:var(--red)}
 .ledger{margin-top:var(--s8);border-top:1px solid var(--ink)}
-.ledger-head{display:flex;justify-content:space-between;align-items:baseline;gap:var(--s2);padding:var(--s3) 0;border-bottom:1px solid var(--hair)}
+.ledger-head{display:flex;justify-content:space-between;align-items:baseline;flex-wrap:wrap;gap:var(--s2);padding:var(--s3) 0;border-bottom:1px solid var(--hair)}
 .ledger-head h4{font-size:20px}
+.ledger-head-actions{display:flex;align-items:center;gap:12px;flex-wrap:wrap}
 .ledger li{display:grid;grid-template-columns:90px minmax(0,1fr) auto;gap:var(--s2);align-items:center;padding:var(--s2) 0;border-bottom:1px solid var(--hair);font-size:16px}
 .ledger .d{font-family:var(--sans);font-size:12px;color:var(--ink-3);font-variant-numeric:tabular-nums}
 .ledger .who b{font-weight:600}

@@ -9,6 +9,24 @@ export async function getOrCreateUser(
   displayName?: string,
   photoUrl?: string
 ) {
+  const syncInMemory = () => {
+    const existing = inMemoryUsers.get(uid);
+    const user = {
+      uid,
+      email,
+      displayName: displayName || null,
+      photoUrl: photoUrl || null,
+      createdAt: existing?.createdAt || new Date(),
+      updatedAt: new Date()
+    };
+    inMemoryUsers.set(uid, user);
+    return user;
+  };
+
+  if (!db) {
+    return syncInMemory();
+  }
+
   try {
     const result = await db
       .insert(users)
@@ -31,15 +49,6 @@ export async function getOrCreateUser(
     return result[0];
   } catch (error) {
     console.warn('Database unavailable, syncing user in-memory:', (error as any)?.message);
-    const user = {
-      uid,
-      email,
-      displayName: displayName || null,
-      photoUrl: photoUrl || null,
-      createdAt: new Date(),
-      updatedAt: new Date()
-    };
-    inMemoryUsers.set(uid, user);
-    return user;
+    return syncInMemory();
   }
 }

@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { PURPOSE_GLOW_PACKAGES, LeadSignal } from '../data/purposeGlowData';
 import { Check, ExternalLink, Calendar, FileText, ArrowUpRight } from 'lucide-react';
+import { isStaticHostingMode } from '../lib/hostingMode';
 
 interface CadenceBoundaryPlannerProps {
   leads: LeadSignal[];
@@ -11,6 +12,7 @@ export const CadenceBoundaryPlanner: React.FC<CadenceBoundaryPlannerProps> = ({
   leads,
   onSelectLeadForAction
 }) => {
+  const staticHosting = isStaticHostingMode();
   // Interactive weekly slot planner (protects her full-time healthcare revenue career boundaries)
   const [weeklyRevampCount, setWeeklyRevampCount] = useState(3);
   const [weeklyScratchCount, setWeeklyScratchCount] = useState(1);
@@ -378,16 +380,23 @@ export const CadenceBoundaryPlanner: React.FC<CadenceBoundaryPlannerProps> = ({
               Why This System Operates the Way You Think
             </h3>
           </div>
-          <a
-            href="/assets/aistudio/Nicole_MINDPRINT_Intelligence_Report_3a181470.pdf"
-            target="_blank"
-            rel="noopener noreferrer"
-            className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-medium bg-slate-100 hover:bg-slate-200 text-slate-900 rounded-lg transition-colors shrink-0"
-          >
-            <FileText className="w-4 h-4 text-teal-800" />
-            Open Full Mindprint Dossier PDF
-            <ArrowUpRight className="w-3.5 h-3.5" />
-          </a>
+          {!staticHosting ? (
+            <a
+              href="/assets/aistudio/Nicole_MINDPRINT_Intelligence_Report_3a181470.pdf"
+              target="_blank"
+              rel="noopener noreferrer"
+              className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-medium bg-slate-100 hover:bg-slate-200 text-slate-900 rounded-lg transition-colors shrink-0"
+            >
+              <FileText className="w-4 h-4 text-teal-800" />
+              Open Full Mindprint Dossier PDF
+              <ArrowUpRight className="w-3.5 h-3.5" />
+            </a>
+          ) : (
+            <span className="inline-flex items-center gap-2 px-3.5 py-2 text-xs font-medium bg-slate-100 text-slate-600 rounded-lg shrink-0">
+              <FileText className="w-4 h-4 text-slate-500" />
+              Internal Dossier Excluded on Static Hosting
+            </span>
+          )}
         </div>
 
         <div className="grid grid-cols-1 md:grid-cols-3 gap-6 pt-5">

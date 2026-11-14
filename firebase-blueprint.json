@@ -1,0 +1,382 @@
+{
+  "entities": {
+    "AdminProfile": {
+      "title": "AdminProfile",
+      "description": "Authorized business administrator profile for Purpose & Glow Career Solutions.",
+      "type": "object",
+      "properties": {
+        "uid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "email": {
+          "type": "string",
+          "format": "email",
+          "maxLength": 254
+        },
+        "displayName": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "role": {
+          "type": "string",
+          "enum": ["admin"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["uid", "email", "role", "createdAt", "updatedAt"]
+    },
+    "LeadSignalRecord": {
+      "title": "LeadSignalRecord",
+      "description": "Candidate lead signal and qualification record managed in the private Admin Workbench.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerEmail": {
+          "type": "string",
+          "format": "email",
+          "maxLength": 254
+        },
+        "personName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "headline": {
+          "type": "string",
+          "maxLength": 240
+        },
+        "location": {
+          "type": "string",
+          "maxLength": 120
+        },
+        "sourceType": {
+          "type": "string",
+          "maxLength": 80
+        },
+        "sourceContext": {
+          "type": "string",
+          "maxLength": 240
+        },
+        "sourceUrl": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "rawText": {
+          "type": "string",
+          "maxLength": 12000
+        },
+        "detectedCluster": {
+          "type": "string",
+          "enum": ["healthcare_rcm", "career_pivot", "layoff_urgent", "student_grad", "general"]
+        },
+        "status": {
+          "type": "string",
+          "enum": [
+            "new_lead",
+            "new_signal",
+            "qualified",
+            "contacted",
+            "diagnostic_sent",
+            "outreach_sent",
+            "interested",
+            "diy_review_offered",
+            "follow_up_needed",
+            "client",
+            "booked_client",
+            "converted",
+            "completed",
+            "not_interested",
+            "closed",
+            "archived",
+            "filtered_noise"
+          ]
+        },
+        "recommendedPackageId": {
+          "type": "string",
+          "maxLength": 64
+        },
+        "fitScore": {
+          "type": "number"
+        },
+        "notes": {
+          "type": "string",
+          "maxLength": 4000
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "ownerUid",
+        "ownerEmail",
+        "personName",
+        "headline",
+        "location",
+        "sourceType",
+        "rawText",
+        "status",
+        "recommendedPackageId",
+        "fitScore",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "InboundInquiryRecord": {
+      "title": "InboundInquiryRecord",
+      "description": "Confidential client consultation or human assessment inquiry.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerEmail": {
+          "type": "string",
+          "format": "email",
+          "maxLength": 254
+        },
+        "senderName": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "senderEmail": {
+          "type": "string",
+          "format": "email",
+          "maxLength": 254
+        },
+        "senderPhone": {
+          "type": "string",
+          "maxLength": 40
+        },
+        "service": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 160
+        },
+        "urgency": {
+          "type": "string",
+          "enum": ["urgent_48h", "standard_week", "flexible"]
+        },
+        "message": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 8000
+        },
+        "isRead": {
+          "type": "boolean"
+        },
+        "status": {
+          "type": "string",
+          "enum": ["new", "reviewed", "responded"]
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": [
+        "id",
+        "ownerEmail",
+        "senderName",
+        "senderEmail",
+        "service",
+        "urgency",
+        "message",
+        "isRead",
+        "status",
+        "createdAt",
+        "updatedAt"
+      ]
+    },
+    "CopilotChatMessage": {
+      "title": "CopilotChatMessage",
+      "description": "Private Admin AI Diagnostic Copilot conversation message.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerEmail": {
+          "type": "string",
+          "format": "email",
+          "maxLength": 254
+        },
+        "role": {
+          "type": "string",
+          "enum": ["user", "model"]
+        },
+        "content": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 12000
+        },
+        "relatedLeadId": {
+          "type": "string",
+          "maxLength": 128
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["id", "ownerUid", "ownerEmail", "role", "content", "createdAt"]
+    },
+    "KeywordRuleRecord": {
+      "title": "KeywordRuleRecord",
+      "description": "Admin-configured keyword scoring rule.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerUid": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "ownerEmail": {
+          "type": "string",
+          "format": "email",
+          "maxLength": 254
+        },
+        "phrase": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 120
+        },
+        "weight": {
+          "type": "number"
+        },
+        "category": {
+          "type": "string",
+          "maxLength": 60
+        },
+        "rationale": {
+          "type": "string",
+          "maxLength": 500
+        },
+        "enabled": {
+          "type": "boolean"
+        },
+        "createdAt": {
+          "type": "string",
+          "format": "date-time"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["id", "ownerUid", "ownerEmail", "phrase", "weight", "category", "rationale", "enabled", "createdAt", "updatedAt"]
+    },
+    "UsageCounterRecord": {
+      "title": "UsageCounterRecord",
+      "description": "Server-managed daily and monthly AI rate-limit counter.",
+      "type": "object",
+      "properties": {
+        "id": {
+          "type": "string",
+          "minLength": 1,
+          "maxLength": 128,
+          "pattern": "^[a-zA-Z0-9_\\-]+$"
+        },
+        "count": {
+          "type": "integer"
+        },
+        "limit": {
+          "type": "integer"
+        },
+        "updatedAt": {
+          "type": "string",
+          "format": "date-time"
+        }
+      },
+      "required": ["id", "count", "limit", "updatedAt"]
+    }
+  },
+  "firestore": {
+    "/admins/{adminUid}": {
+      "schema": {
+        "$ref": "#/entities/AdminProfile"
+      },
+      "description": "Allowlisted administrator metadata; server-managed and read-restricted to owner."
+    },
+    "/leads/{leadId}": {
+      "schema": {
+        "$ref": "#/entities/LeadSignalRecord"
+      },
+      "description": "Private Admin Workbench candidate lead pipeline records."
+    },
+    "/inquiries/{inquiryId}": {
+      "schema": {
+        "$ref": "#/entities/InboundInquiryRecord"
+      },
+      "description": "Private client contact and human-assessment submissions; zero public read/list."
+    },
+    "/copilotChats/{messageId}": {
+      "schema": {
+        "$ref": "#/entities/CopilotChatMessage"
+      },
+      "description": "Private Admin AI Diagnostic Copilot chat history."
+    },
+    "/keywordRules/{ruleId}": {
+      "schema": {
+        "$ref": "#/entities/KeywordRuleRecord"
+      },
+      "description": "Private Admin lead qualification scoring rules."
+    },
+    "/usageCounters/{counterId}": {
+      "schema": {
+        "$ref": "#/entities/UsageCounterRecord"
+      },
+      "description": "Server-managed rate-limit and budget circuit-breaker counters; zero client writes."
+    }
+  }
+}

@@ -6,7 +6,14 @@ declare global {
   var _postgresPool: Pool | undefined;
 }
 
+export function isPostgresConfigured(env: NodeJS.ProcessEnv = process.env): boolean {
+  return Boolean(env.SQL_HOST?.trim() && env.SQL_DB_NAME?.trim());
+}
+
 export const createPool = () => {
+  if (!isPostgresConfigured()) {
+    return null;
+  }
   if (!global._postgresPool) {
     global._postgresPool = new Pool({
       host: process.env.SQL_HOST,
@@ -26,4 +33,4 @@ export const createPool = () => {
 
 const pool = createPool();
 
-export const db = drizzle(pool, { schema });
+export const db = pool ? drizzle(pool, { schema }) : null;

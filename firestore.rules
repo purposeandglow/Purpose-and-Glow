@@ -1,0 +1,362 @@
+rules_version = '2';
+
+service cloud.firestore {
+  match /databases/{database}/documents {
+    // Pillar 4.1: Global Safety Net (Default Deny)
+    match /{document=**} {
+      allow read, write: if false;
+    }
+
+    // Core Reusable Primitives
+    function incoming() {
+      return request.resource.data;
+    }
+
+    function existing() {
+      return resource.data;
+    }
+
+    function isValidId(id) {
+      return id is string
+        && id.size() >= 1
+        && id.size() <= 128
+        && id.matches('^[a-zA-Z0-9_\\-]+$');
+    }
+
+    function isSignedIn() {
+      return request.auth != null;
+    }
+
+    function isVerifiedEmail() {
+      return isSignedIn()
+        && request.auth.token.email_verified == true
+        && request.auth.token.email is string;
+    }
+
+    // Bootstrapped Founder Admin (uses auth token only - safe in allow list without O(n) get/exists)
+    function isBootstrappedAdmin() {
+      return isVerifiedEmail()
+        && request.auth.token.email == 'purposeandglowcareers@gmail.com';
+    }
+
+    // Extended Admin Lookup for single-document operations (never called in allow list)
+    function isAdminDocMember() {
+      return isBootstrappedAdmin()
+        || (isVerifiedEmail()
+          && exists(/databases/$(database)/documents/admins/$(request.auth.uid)));
+    }
+
+    function isValidLeadStatus(status) {
+      return status in [
+        'new_lead',
+        'new_signal',
+        'qualified',
+        'contacted',
+        'diagnostic_sent',
+        'outreach_sent',
+        'interested',
+        'diy_review_offered',
+        'follow_up_needed',
+        'client',
+        'booked_client',
+        'converted',
+        'completed',
+        'not_interested',
+        'closed',
+        'archived',
+        'filtered_noise'
+      ];
+    }
+
+    function isValidCluster(cluster) {
+      return cluster in [
+        'healthcare_rcm',
+        'career_pivot',
+        'layoff_urgent',
+        'student_grad',
+        'general'
+      ];
+    }
+
+    function isValidLead(data) {
+      return data.keys().hasAll([
+          'id',
+          'ownerUid',
+          'ownerEmail',
+          'personName',
+          'headline',
+          'location',
+          'sourceType',
+          'rawText',
+          'status',
+          'recommendedPackageId',
+          'fitScore',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id',
+          'ownerUid',
+          'ownerEmail',
+          'personName',
+          'headline',
+          'location',
+          'sourceType',
+          'sourceContext',
+          'sourceUrl',
+          'rawText',
+          'detectedCluster',
+          'status',
+          'recommendedPackageId',
+          'fitScore',
+          'notes',
+          'createdAt',
+          'updatedAt'
+        ])
+        && isValidId(data.id)
+        && data.ownerUid is string
+        && data.ownerUid == request.auth.uid
+        && data.ownerEmail is string
+        && data.ownerEmail == request.auth.token.email
+        && data.personName is string && data.personName.size() >= 1 && data.personName.size() <= 120
+        && data.headline is string && data.headline.size() <= 240
+        && data.location is string && data.location.size() <= 120
+        && data.sourceType is string && data.sourceType.size() <= 80
+        && (!('sourceContext' in data) || (data.sourceContext is string && data.sourceContext.size() <= 240))
+        && (!('sourceUrl' in data) || (data.sourceUrl is string && data.sourceUrl.size() <= 500))
+        && data.rawText is string && data.rawText.size() <= 12000
+        && (!('detectedCluster' in data) || (data.detectedCluster is string && isValidCluster(data.detectedCluster)))
+        && data.status is string && isValidLeadStatus(data.status)
+        && data.recommendedPackageId is string && data.recommendedPackageId.size() >= 1 && data.recommendedPackageId.size() <= 64
+        && data.fitScore is number && data.fitScore >= 0 && data.fitScore <= 100
+        && (!('notes' in data) || (data.notes is string && data.notes.size() <= 4000))
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidInquiry(data) {
+      return data.keys().hasAll([
+          'id',
+          'ownerEmail',
+          'senderName',
+          'senderEmail',
+          'service',
+          'urgency',
+          'message',
+          'isRead',
+          'status',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id',
+          'ownerEmail',
+          'senderName',
+          'senderEmail',
+          'senderPhone',
+          'service',
+          'urgency',
+          'message',
+          'isRead',
+          'status',
+          'createdAt',
+          'updatedAt'
+        ])
+        && isValidId(data.id)
+        && data.ownerEmail is string && data.ownerEmail == 'purposeandglowcareers@gmail.com'
+        && data.senderName is string && data.senderName.size() >= 1 && data.senderName.size() <= 120
+        && data.senderEmail is string && data.senderEmail.size() >= 3 && data.senderEmail.size() <= 254
+        && (!('senderPhone' in data) || (data.senderPhone is string && data.senderPhone.size() <= 40))
+        && data['service'] is string && data['service'].size() >= 1 && data['service'].size() <= 160
+        && data.urgency in ['urgent_48h', 'standard_week', 'flexible']
+        && data.message is string && data.message.size() >= 1 && data.message.size() <= 8000
+        && data.isRead is bool
+        && data.status in ['new', 'reviewed', 'responded']
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    function isValidChatMessage(data) {
+      return data.keys().hasAll([
+          'id',
+          'ownerUid',
+          'ownerEmail',
+          'role',
+          'content',
+          'createdAt'
+        ])
+        && data.keys().hasOnly([
+          'id',
+          'ownerUid',
+          'ownerEmail',
+          'role',
+          'content',
+          'relatedLeadId',
+          'createdAt'
+        ])
+        && isValidId(data.id)
+        && data.ownerUid is string && data.ownerUid == request.auth.uid
+        && data.ownerEmail is string && data.ownerEmail == request.auth.token.email
+        && data.role in ['user', 'model']
+        && data.content is string && data.content.size() >= 1 && data.content.size() <= 12000
+        && (!('relatedLeadId' in data) || (data.relatedLeadId is string && isValidId(data.relatedLeadId)))
+        && data.createdAt is timestamp;
+    }
+
+    function isValidKeywordRule(data) {
+      return data.keys().hasAll([
+          'id',
+          'ownerUid',
+          'ownerEmail',
+          'phrase',
+          'weight',
+          'category',
+          'rationale',
+          'enabled',
+          'createdAt',
+          'updatedAt'
+        ])
+        && data.keys().hasOnly([
+          'id',
+          'ownerUid',
+          'ownerEmail',
+          'phrase',
+          'weight',
+          'category',
+          'rationale',
+          'enabled',
+          'createdAt',
+          'updatedAt'
+        ])
+        && isValidId(data.id)
+        && data.ownerUid is string && data.ownerUid == request.auth.uid
+        && data.ownerEmail is string && data.ownerEmail == request.auth.token.email
+        && data.phrase is string && data.phrase.size() >= 1 && data.phrase.size() <= 120
+        && data.weight is number && data.weight >= -100 && data.weight <= 100
+        && data.category is string && data.category.size() >= 1 && data.category.size() <= 60
+        && data.rationale is string && data.rationale.size() <= 500
+        && data.enabled is bool
+        && data.createdAt is timestamp
+        && data.updatedAt is timestamp;
+    }
+
+    // 1. Admins Registry (Server-managed only; prevents privilege escalation)
+    match /admins/{adminUid} {
+      allow get: if isValidId(adminUid) && (
+        isAdminDocMember() || (isVerifiedEmail() && request.auth.uid == adminUid)
+      );
+      allow list, create, update, delete: if false;
+    }
+
+    // 2. Private Candidate Lead Signals
+    match /leads/{leadId} {
+      allow get: if isValidId(leadId) && isAdminDocMember();
+      allow list: if isBootstrappedAdmin() && existing().ownerEmail == request.auth.token.email;
+      allow create: if isAdminDocMember()
+        && isValidId(leadId)
+        && isValidLead(incoming())
+        && incoming().id == leadId
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isAdminDocMember()
+        && isValidId(leadId)
+        && isValidLead(incoming())
+        && (existing().status != 'archived' || isBootstrappedAdmin())
+        && incoming().id == existing().id
+        && incoming().ownerUid == existing().ownerUid
+        && incoming().ownerEmail == existing().ownerEmail
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'personName',
+          'headline',
+          'location',
+          'sourceType',
+          'sourceContext',
+          'sourceUrl',
+          'rawText',
+          'status',
+          'recommendedPackageId',
+          'fitScore',
+          'notes',
+          'detectedCluster',
+          'updatedAt'
+        ]);
+      allow delete: if isValidId(leadId) && isAdminDocMember();
+    }
+
+    // 3. Confidential Client Inquiries (Written by rate-limited backend; read/updated only by Admin)
+    match /inquiries/{inquiryId} {
+      allow get: if isValidId(inquiryId) && isAdminDocMember();
+      allow list: if isBootstrappedAdmin() && existing().ownerEmail == request.auth.token.email;
+      allow create: if false;
+      allow update: if isAdminDocMember()
+        && isValidId(inquiryId)
+        && isValidInquiry(incoming())
+        && (existing().status != 'responded' || isBootstrappedAdmin())
+        && incoming().id == existing().id
+        && incoming().ownerEmail == existing().ownerEmail
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'isRead',
+          'status',
+          'updatedAt'
+        ]);
+      allow delete: if isValidId(inquiryId) && isAdminDocMember();
+    }
+
+    // 4. Private Admin AI Copilot History
+    match /copilotChats/{messageId} {
+      allow get: if isValidId(messageId) && isAdminDocMember();
+      allow list: if isBootstrappedAdmin() && existing().ownerEmail == request.auth.token.email;
+      allow create: if isAdminDocMember()
+        && isValidId(messageId)
+        && isValidChatMessage(incoming())
+        && incoming().id == messageId
+        && incoming().createdAt == request.time;
+      allow update: if false;
+      allow delete: if isValidId(messageId) && isAdminDocMember();
+    }
+
+    // 5. Private Admin Keyword Rules
+    match /keywordRules/{ruleId} {
+      allow get: if isValidId(ruleId) && isAdminDocMember();
+      allow list: if isBootstrappedAdmin() && existing().ownerEmail == request.auth.token.email;
+      allow create: if isAdminDocMember()
+        && isValidId(ruleId)
+        && isValidKeywordRule(incoming())
+        && incoming().id == ruleId
+        && incoming().createdAt == request.time
+        && incoming().updatedAt == request.time;
+      allow update: if isAdminDocMember()
+        && isValidId(ruleId)
+        && isValidKeywordRule(incoming())
+        && incoming().id == existing().id
+        && incoming().ownerUid == existing().ownerUid
+        && incoming().ownerEmail == existing().ownerEmail
+        && incoming().createdAt == existing().createdAt
+        && incoming().updatedAt == request.time
+        && incoming().diff(existing()).affectedKeys().hasOnly([
+          'phrase',
+          'weight',
+          'category',
+          'rationale',
+          'enabled',
+          'updatedAt'
+        ]);
+      allow delete: if isValidId(ruleId) && isAdminDocMember();
+    }
+
+    // 6. Server-Only Rate Limit & Budget Circuit-Breaker Counters
+    match /usageCounters/{counterId} {
+      allow get: if isValidId(counterId) && isAdminDocMember();
+      allow list, create, update, delete: if false;
+    }
+
+    // 7. Connection probe path (intentionally denied to confirm server connectivity)
+    match /test/connection {
+      allow read, write: if false;
+    }
+  }
+}
