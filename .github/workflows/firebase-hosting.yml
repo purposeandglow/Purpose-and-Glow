@@ -1,0 +1,42 @@
+
+name: Deploy Purpose and Glow to Firebase Hosting
+
+on:
+  workflow_dispatch:
+
+permissions:
+  contents: read
+  id-token: write
+
+jobs:
+  deploy:
+    runs-on: ubuntu-latest
+    timeout-minutes: 15
+
+    steps:
+      - name: Checkout website
+        uses: actions/checkout@v4
+
+      - name: Set up Node.js
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: npm
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Build static website
+        run: npm run build:hosting
+        env:
+          VITE_STATIC_HOSTING: 'true'
+          PUBLIC_AI_ENABLED: 'false'
+
+      - name: Authenticate with Google Cloud
+        uses: google-github-actions/auth@v2
+        with:
+          workload_identity_provider: projects/106059561641/locations/global/workloadIdentityPools/purpose-glow-github/providers/github-actions
+          service_account: purpose-glow-hosting-deploy@purpose-and-glow.iam.gserviceaccount.com
+
+      - name: Deploy Firebase Hosting only
+        run: npx --yes firebase-tools deploy --only hosting --project purpose-and-glow --non-interactive
