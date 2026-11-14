@@ -184,21 +184,25 @@ describe('Phase 7 Firebase Hosting & Static Launch Preparation', () => {
     expect(restored.mergedCounts.clientRequests).toBe(1);
   });
 
-  it('keeps obsidian.css layered inside @layer base/@layer components and prevents masthead/stats layout overlap', () => {
+  it('keeps obsidian.css layered inside @layer base/@layer components and prevents masthead/stats/hero layout overlap', () => {
     const indexCss = readProjectFile('src/index.css');
     expect(indexCss).toContain('@import "tailwindcss";');
     expect(indexCss).toContain('@custom-variant dark');
+    expect(indexCss).toContain('@import "./styles/obsidian.css";');
 
     const obsidianCss = readProjectFile('src/styles/obsidian.css');
     expect(obsidianCss).toContain('@layer base');
     expect(obsidianCss).toContain('@layer components');
     expect(obsidianCss).toContain('overflow-x:clip');
     expect(obsidianCss).toContain('white-space:nowrap');
+    // .hero must never mask horizontal child overflow with overflow:hidden
+    expect(obsidianCss).not.toMatch(/\.hero\{[^}]*overflow:\s*hidden/);
     // .hero-foot must not squeeze .stats inside a `1fr auto` grid beside .hero-cta
     expect(obsidianCss).not.toMatch(/\.hero-foot\{[^}]*1fr auto/);
     // Responsive breakpoints covering 1024px collapse, 834/768px tablet, and 430/375px phone
     expect(obsidianCss).toContain('@media (max-width:1120px)');
     expect(obsidianCss).toContain('@media (max-width:960px)');
+    expect(obsidianCss).toContain('.hero-grid{grid-template-columns:minmax(0,1fr);column-gap:0');
     expect(obsidianCss).toContain('@media (max-width:768px)');
     expect(obsidianCss).toContain('@media (max-width:600px)');
     expect(obsidianCss).toContain('@media (max-width:390px)');

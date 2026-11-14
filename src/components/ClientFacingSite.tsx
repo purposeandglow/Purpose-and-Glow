@@ -46,7 +46,6 @@ import {
   parseJsonApiResponse
 } from '../lib/hostingMode';
 import { generateResumeSvg } from '../utils/obsidianSvg';
-import '../styles/obsidian.css';
 
 interface ClientFacingSiteProps {
   onOpenAdmin: () => void;
@@ -962,7 +961,7 @@ export function ClientFacingSite({
                   alt="Founder of Purpose & Glow Career Solutions"
                   width="600"
                   height="750"
-                  loading="lazy"
+                  decoding="async"
                 />
               </div>
               <figcaption>
@@ -1360,7 +1359,7 @@ export function ClientFacingSite({
                   className="review-screenshot-img"
                   width="600"
                   height="450"
-                  loading="lazy"
+                  decoding="async"
                 />
               </div>
               <figcaption>
@@ -1448,7 +1447,7 @@ export function ClientFacingSite({
                   alt="Anonymized executive leadership résumé proof"
                   width="600"
                   height="750"
-                  loading="lazy"
+                  decoding="async"
                 />
               </div>
               <figcaption>
@@ -1666,7 +1665,7 @@ export function ClientFacingSite({
                         src={sample.previewImage}
                         alt={sample.t}
                         style={{ width: '100%', height: 'auto', display: 'block', aspectRatio: '320/420', objectFit: 'cover' }}
-                        loading="lazy"
+                        decoding="async"
                       />
                     </div>
                     <figcaption>
