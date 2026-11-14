@@ -223,16 +223,16 @@ export function FindYourServiceGuide({
 
   return (
     <div
-      className={`rounded-2xl border p-5 sm:p-7 shadow-xl transition-all duration-300 ${
+      className={`rounded-xl border p-5 sm:p-6 shadow-sm transition-all duration-300 font-[var(--sans)] ${
         isDarkMode
           ? 'bg-[#121624]/90 border-pink-500/20 text-slate-100 shadow-pink-950/20'
           : 'bg-white border-[#FCD6E4] text-slate-900 shadow-pink-100/40'
       }`}
     >
-      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-4 mb-6 border-slate-700/20">
-        <div>
+      <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b pb-4 mb-5 border-slate-700/20">
+        <div className="min-w-0">
           <div className="flex items-center gap-2 text-xs font-bold uppercase tracking-widest text-[#C2185B]">
-            <Compass className="w-4 h-4" />
+            <Compass className="w-4 h-4 shrink-0" />
             <span>Interactive Matcher</span>
           </div>
           <h3 className="text-xl sm:text-2xl font-bold tracking-tight mt-1">
@@ -243,18 +243,18 @@ export function FindYourServiceGuide({
           </p>
         </div>
 
-        <div className="flex items-center gap-2">
+        <div className="flex items-center gap-2 shrink-0">
           {currentStep > 1 && (
             <button
               type="button"
               onClick={handleReset}
-              className="px-3 py-1.5 rounded-lg border border-slate-400/30 text-xs font-semibold hover:bg-slate-500/10 transition-colors flex items-center gap-1.5"
+              className="px-3 py-1.5 rounded-lg border border-slate-400/30 text-xs font-semibold hover:bg-slate-500/10 transition-colors flex items-center gap-1.5 whitespace-nowrap"
             >
               <RotateCcw className="w-3.5 h-3.5" />
               <span>Start Over</span>
             </button>
           )}
-          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-pink-500/10 text-[#9C1450] dark:text-pink-400 border border-pink-500/20">
+          <span className="text-xs font-semibold px-2.5 py-1 rounded-full bg-pink-500/10 text-[#9C1450] dark:text-pink-400 border border-pink-500/20 whitespace-nowrap">
             Step {Math.min(currentStep, 2)} of 2
           </span>
         </div>

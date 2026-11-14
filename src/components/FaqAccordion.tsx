@@ -87,7 +87,7 @@ export function FaqAccordion({ isDarkMode = false }: FaqAccordionProps) {
           </p>
         </div>
 
-        <div className="max-w-4xl mx-auto space-y-3 mt-6">
+        <div className="space-y-3 mt-5 font-[var(--sans)]">
           {FAQS.map((faq) => {
             const isOpen = openIds.includes(faq.id);
             return (
@@ -107,9 +107,9 @@ export function FaqAccordion({ isDarkMode = false }: FaqAccordionProps) {
                     isOpen ? 'text-[#C2185B] dark:text-pink-400' : 'text-slate-900 dark:text-slate-100'
                   }`}
                 >
-                  <span className="flex items-center gap-3">
+                  <span className="flex items-center gap-3 min-w-0">
                     <HelpCircle className="w-4 h-4 text-pink-500 shrink-0" />
-                    <span>{faq.question}</span>
+                    <span className="leading-snug">{faq.question}</span>
                   </span>
                   <ChevronDown
                     className={`w-4 h-4 text-slate-400 shrink-0 transition-transform duration-200 ${
@@ -119,7 +119,7 @@ export function FaqAccordion({ isDarkMode = false }: FaqAccordionProps) {
                 </button>
                 {isOpen && (
                   <div
-                    className={`px-5 pb-5 pt-1 text-xs sm:text-sm leading-relaxed border-t ${
+                    className={`px-4 sm:px-5 pb-4 sm:pb-5 pt-3 text-sm leading-relaxed border-t ${
                       isDarkMode
                         ? 'border-slate-800/80 text-slate-300'
                         : 'border-pink-100/60 text-slate-700'

@@ -163,39 +163,39 @@ export function CareerResourcesSection({ isDarkMode = false }: CareerResourcesSe
           </p>
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-6">
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-5 mt-5 font-[var(--sans)]">
           {CAREER_ARTICLES.map((art) => (
             <article
               key={art.id}
-              className={`rounded-2xl border p-5 flex flex-col justify-between transition-all duration-200 hover:-translate-y-1 shadow-sm ${
+              className={`rounded-xl border p-5 flex flex-col justify-between transition-all duration-200 hover:-translate-y-0.5 shadow-xs min-w-0 ${
                 isDarkMode
                   ? 'bg-[#121624] border-slate-800 hover:border-pink-500/40 text-slate-100'
                   : 'bg-white border-[#fce8f0] hover:border-pink-300 text-slate-900 shadow-pink-50/50'
               }`}
             >
               <div className="space-y-3">
-                <div className="flex items-center justify-between text-[11px] font-semibold text-[#9C1450] dark:text-pink-400">
+                <div className="flex items-center justify-between gap-2 text-[11px] font-semibold text-[#9C1450] dark:text-pink-400">
                   <span className="px-2 py-0.5 rounded bg-pink-500/10 border border-pink-500/20">
                     {art.category}
                   </span>
-                  <span className="opacity-75">{art.readTime}</span>
+                  <span className="opacity-75 whitespace-nowrap">{art.readTime}</span>
                 </div>
-                <h3 className="text-base font-bold leading-snug tracking-tight">
+                <h3 className="text-base sm:text-lg font-bold leading-snug tracking-tight">
                   {art.title}
                 </h3>
-                <p className="text-xs opacity-75 leading-relaxed">
+                <p className="text-xs sm:text-sm opacity-80 leading-relaxed">
                   {art.summary}
                 </p>
               </div>
 
-              <div className="pt-4 mt-4 border-t border-slate-700/15">
+              <div className="pt-4 mt-4 border-t border-slate-500/20">
                 <button
                   type="button"
                   onClick={() => setActiveArticle(art)}
-                  className="w-full text-xs font-semibold text-[#C2185B] dark:text-pink-400 hover:underline flex items-center justify-between cursor-pointer"
+                  className="w-full text-xs sm:text-sm font-semibold text-[#C2185B] dark:text-pink-400 hover:underline flex items-center justify-between cursor-pointer"
                 >
                   <span>Read Guide</span>
-                  <ArrowRight className="w-3.5 h-3.5" />
+                  <ArrowRight className="w-4 h-4" />
                 </button>
               </div>
             </article>

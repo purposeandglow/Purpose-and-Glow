@@ -159,57 +159,59 @@ export function MobilePricingCards({
   isDarkMode = false
 }: MobilePricingCardsProps) {
   return (
-    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-4.5 mt-6">
-      {PRICING_PACKAGES.map((pkg) => (
+    <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-5 mt-5 font-[var(--sans)]">
+      {PRICING_PACKAGES.map((pkg, idx) => (
         <div
           key={pkg.id}
-          className={`relative rounded-2xl border p-5 flex flex-col justify-between transition-all duration-200 ${
+          className={`relative rounded-xl border p-5 sm:p-6 flex flex-col justify-between transition-all duration-200 min-w-0 ${
+            idx === PRICING_PACKAGES.length - 1 ? 'sm:col-span-2 lg:col-span-1' : ''
+          } ${
             pkg.popular
               ? isDarkMode
-                ? 'bg-gradient-to-b from-[#1E2333] to-[#121624] border-pink-500 shadow-xl shadow-pink-950/30 ring-1 ring-pink-500/50'
-                : 'bg-gradient-to-b from-[#FFF5F8] to-white border-[#C2185B] shadow-xl shadow-pink-100/60 ring-1 ring-[#C2185B]/30'
+                ? 'bg-gradient-to-b from-[#1E2333] to-[#121624] border-pink-500 shadow-lg shadow-pink-950/30 ring-1 ring-pink-500/40'
+                : 'bg-gradient-to-b from-[#FFF5F8] to-white border-[#C2185B] shadow-lg shadow-pink-100/60 ring-1 ring-[#C2185B]/25'
               : isDarkMode
               ? 'bg-[#121624] border-slate-800 text-slate-100 hover:border-slate-700'
-              : 'bg-white border-[#fce8f0] text-slate-900 shadow-sm hover:border-pink-200'
+              : 'bg-white border-[#fce8f0] text-slate-900 shadow-xs hover:border-pink-200'
           }`}
         >
           {pkg.popular && (
-            <div className="absolute -top-3 left-1/2 -translate-x-1/2 px-3 py-0.5 rounded-full bg-gradient-to-r from-[#C2185B] to-[#9C1450] text-white text-[11px] font-bold tracking-wider uppercase shadow-md flex items-center gap-1 whitespace-nowrap">
+            <div className="absolute -top-3 left-5 px-3 py-0.5 rounded-full bg-gradient-to-r from-[#C2185B] to-[#9C1450] text-white text-[11px] font-bold tracking-wider uppercase shadow-sm flex items-center gap-1 whitespace-nowrap">
               <Star className="w-3 h-3 fill-white" />
               <span>{pkg.tag}</span>
             </div>
           )}
 
           <div>
-            <div className="flex items-start justify-between gap-2">
-              <div>
+            <div className="flex items-start justify-between gap-3">
+              <div className="min-w-0">
                 {!pkg.popular && (
-                  <span className="text-[10px] font-bold uppercase tracking-wider text-[#9C1450] dark:text-pink-400 px-2 py-0.5 rounded bg-pink-500/10">
+                  <span className="inline-block text-[10.5px] font-bold uppercase tracking-wider text-[#9C1450] dark:text-pink-400 px-2 py-0.5 rounded bg-pink-500/10">
                     {pkg.tag}
                   </span>
                 )}
-                <h3 className={`text-lg font-bold tracking-tight ${pkg.popular ? 'mt-1' : 'mt-2'}`}>
+                <h3 className={`text-lg font-bold tracking-tight leading-snug ${pkg.popular ? 'mt-1.5' : 'mt-2'}`}>
                   {pkg.name}
                 </h3>
               </div>
               <div className="text-right shrink-0">
-                <div className="text-2xl font-extrabold text-[#C2185B] dark:text-pink-400">
+                <div className="text-2xl font-extrabold text-[#C2185B] dark:text-pink-400 leading-none">
                   {pkg.price}
                 </div>
-                <div className="text-[10px] opacity-65 flex items-center gap-1 justify-end">
-                  <Clock className="w-2.5 h-2.5 text-pink-500" />
+                <div className="text-[11px] opacity-75 flex items-center gap-1 justify-end mt-1.5 whitespace-nowrap">
+                  <Clock className="w-3 h-3 text-pink-500" />
                   <span>{pkg.turnaround}</span>
                 </div>
               </div>
             </div>
 
-            <p className="text-xs opacity-75 mt-2 mb-4 leading-relaxed">
+            <p className="text-xs sm:text-[13px] opacity-80 mt-2.5 mb-4 leading-relaxed">
               {pkg.target}
             </p>
 
-            <ul className="space-y-2 text-xs mb-5 border-t pt-3 border-slate-700/15">
+            <ul className="space-y-2 text-xs sm:text-[13px] mb-5 border-t pt-3.5 border-slate-500/20">
               {pkg.bullets.map((b, bIdx) => (
-                <li key={bIdx} className="flex items-start gap-2">
+                <li key={bIdx} className="flex items-start gap-2 leading-snug">
                   <Check className="w-3.5 h-3.5 text-pink-500 shrink-0 mt-0.5" />
                   <span>{b}</span>
                 </li>
@@ -221,10 +223,10 @@ export function MobilePricingCards({
             <button
               type="button"
               onClick={() => onSelectService(pkg.serviceId)}
-              className={`w-full py-2.5 px-4 rounded-xl text-xs font-bold transition-all flex items-center justify-center gap-2 ${
+              className={`w-full min-h-[42px] py-2.5 px-4 rounded-lg text-xs sm:text-[13px] font-bold transition-all flex items-center justify-center gap-2 ${
                 pkg.popular
-                  ? 'bg-gradient-to-r from-[#C2185B] via-[#9C1450] to-[#801040] text-white hover:brightness-110 shadow-md shadow-pink-500/30'
-                  : 'border border-slate-400/30 hover:border-pink-500 text-current hover:bg-pink-500/10'
+                  ? 'bg-[#C2185B] hover:bg-[#9C1450] text-white shadow-sm'
+                  : 'border border-slate-400/35 hover:border-[#C2185B] text-current hover:bg-pink-500/10'
               }`}
             >
               <span>{pkg.price === '$0' ? 'Request Free Assessment' : `Select ${pkg.name}`}</span>

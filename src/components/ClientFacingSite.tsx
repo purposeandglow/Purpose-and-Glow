@@ -544,17 +544,20 @@ export function ClientFacingSite({
               alt="Purpose & Glow Career Solutions"
               className="brand-logo"
             />
-            <span className="brand-title">Purpose &amp; Glow <em>Career Solutions</em></span>
+            <span className="brand-title">
+              <span>Purpose &amp; Glow</span>
+              <em>Career Solutions</em>
+            </span>
           </a>
 
           {/* Section Navigation */}
           <nav className="nav" aria-label="Primary navigation">
-            <a href="#work" aria-current={activeSectionLabel === 'Services'}>Services</a>
-            <a href="#testimony" aria-current={activeSectionLabel === 'Client Reviews'}>Client Reviews</a>
-            <a href="#process" aria-current={activeSectionLabel === 'My Process'}>My Process</a>
-            <a href="#portfolio" aria-current={activeSectionLabel === 'Résumé Examples'}>Résumé Examples</a>
-            <a href="#pricing" aria-current={activeSectionLabel === 'Pricing'}>Pricing</a>
-            <a href="#contact" aria-current={activeSectionLabel === 'Contact'}>Contact</a>
+            <a href="#work" aria-current={activeSectionLabel === 'Services' ? 'true' : undefined}>Services</a>
+            <a href="#testimony" aria-current={activeSectionLabel === 'Client Reviews' ? 'true' : undefined}>Client Reviews</a>
+            <a href="#process" aria-current={activeSectionLabel === 'My Process' ? 'true' : undefined}>My Process</a>
+            <a href="#portfolio" aria-current={activeSectionLabel === 'Résumé Examples' ? 'true' : undefined}>Résumé Examples</a>
+            <a href="#pricing" aria-current={activeSectionLabel === 'Pricing' ? 'true' : undefined}>Pricing</a>
+            <a href="#contact" aria-current={activeSectionLabel === 'Contact' ? 'true' : undefined}>Contact</a>
           </nav>
 
           {/* Action Hub & Live Section Readout */}
@@ -876,13 +879,13 @@ export function ClientFacingSite({
                   </div>
                 </div>
 
-                {/* Hero Call to Action Buttons - 5 Prominent CTAs */}
+                {/* Hero Call to Action Buttons */}
                 <div className="hero-cta">
                   <div className="hero-cta-buttons">
                     {/* CTA 1: Explore My Services */}
                     <a href="#work" className="btn-ink">
                       <span>Explore My Services</span>
-                      <ArrowRight style={{ width: '14px', height: '14px' }} />
+                      <ArrowRight style={{ width: '15px', height: '15px' }} />
                     </a>
 
                     {/* CTA 2: Get a Free Career & Résumé Assessment (Human) */}
@@ -890,14 +893,8 @@ export function ClientFacingSite({
                       type="button"
                       onClick={() => setIsAssessmentModalOpen(true)}
                       className="btn-ink"
-                      style={{
-                        background: 'linear-gradient(135deg, #C2185B 0%, #9C1450 100%)',
-                        color: '#FFFFFF',
-                        border: '1px solid rgba(255, 255, 255, 0.25)',
-                        boxShadow: '0 4px 14px rgba(194, 24, 91, 0.35)'
-                      }}
                     >
-                      <Sparkles style={{ width: '15px', height: '15px', color: '#FCE8F0' }} />
+                      <Sparkles style={{ width: '15px', height: '15px' }} />
                       <span>Free Career &amp; Résumé Assessment</span>
                     </button>
 
@@ -942,7 +939,7 @@ export function ClientFacingSite({
                       <ExternalLink style={{ width: '12px', height: '12px', opacity: 0.8 }} />
                     </a>
                   </div>
-                  <p style={{ fontSize: '12px', color: 'var(--ink-3)', maxWidth: '56ch', marginTop: '4px' }}>
+                  <p className="hero-cta-note">
                     Initial résumé feedback, DIY recommendations, and job search registration are free ($0). Personalized writing services are paid, and free guidance does not guarantee interviews or job placement.
                   </p>
                   <small>
@@ -1742,48 +1739,34 @@ export function ClientFacingSite({
               </p>
             </div>
 
-            {/* View Mode Switcher: Stacked Cards (Mobile Friendly) vs Comparison Matrix */}
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between', flexWrap: 'wrap', gap: '12px', marginTop: '20px', marginBottom: '20px' }}>
-              <div style={{ display: 'flex', gap: '8px', background: isDarkMode ? '#1E2333' : '#FCE8F0', padding: '4px', borderRadius: '12px' }}>
+            {/* View Mode Switcher: Stacked Cards vs Comparison Matrix */}
+            <div className="flex flex-wrap items-center justify-between gap-3 mt-4 mb-5 font-[var(--sans)]">
+              <div className="inline-flex flex-wrap gap-1.5 p-1 rounded-lg border border-[var(--hair)] bg-[var(--paper)]">
                 <button
                   type="button"
                   onClick={() => setPricingViewMode('cards')}
-                  style={{
-                    padding: '8px 16px',
-                    borderRadius: '8px',
-                    fontSize: '12px',
-                    fontWeight: 700,
-                    background: pricingViewMode === 'cards' ? (isDarkMode ? '#C2185B' : '#FFFFFF') : 'transparent',
-                    color: pricingViewMode === 'cards' ? (isDarkMode ? '#FFFFFF' : '#C2185B') : 'inherit',
-                    border: 'none',
-                    cursor: 'pointer',
-                    boxShadow: pricingViewMode === 'cards' ? '0 2px 8px rgba(0,0,0,0.12)' : 'none',
-                    transition: 'all 0.2s'
-                  }}
+                  className={`px-3.5 py-2 rounded-md text-xs sm:text-[13px] font-semibold transition-colors ${
+                    pricingViewMode === 'cards'
+                      ? 'bg-[var(--red)] text-white shadow-xs'
+                      : 'text-[var(--ink-2)] hover:text-[var(--red)]'
+                  }`}
                 >
                   Stacked Cards (Mobile Easy)
                 </button>
                 <button
                   type="button"
                   onClick={() => setPricingViewMode('table')}
-                  style={{
-                    padding: '8px 16px',
-                    borderRadius: '8px',
-                    fontSize: '12px',
-                    fontWeight: 700,
-                    background: pricingViewMode === 'table' ? (isDarkMode ? '#C2185B' : '#FFFFFF') : 'transparent',
-                    color: pricingViewMode === 'table' ? (isDarkMode ? '#FFFFFF' : '#C2185B') : 'inherit',
-                    border: 'none',
-                    cursor: 'pointer',
-                    boxShadow: pricingViewMode === 'table' ? '0 2px 8px rgba(0,0,0,0.12)' : 'none',
-                    transition: 'all 0.2s'
-                  }}
+                  className={`px-3.5 py-2 rounded-md text-xs sm:text-[13px] font-semibold transition-colors ${
+                    pricingViewMode === 'table'
+                      ? 'bg-[var(--red)] text-white shadow-xs'
+                      : 'text-[var(--ink-2)] hover:text-[var(--red)]'
+                  }`}
                 >
                   Comparison Matrix (Table)
                 </button>
               </div>
 
-              <span style={{ fontSize: '12px', opacity: 0.8, fontWeight: 500 }}>
+              <span className="text-xs sm:text-[13px] text-[var(--ink-3)] font-medium">
                 All packages include editable Word (.docx) &amp; high-res PDF
               </span>
             </div>
@@ -1951,64 +1934,72 @@ export function ClientFacingSite({
             {/* Individual Add-on Services Strip */}
             <div className="addons">
               <div className="addon">
-                <b>
-                  <span>Custom Cover Letter</span>
-                  <span className="num">$49</span>
-                </b>
-                <p>Tailored specifically to one target role and company. Word + PDF delivered within 24–48h.</p>
+                <div>
+                  <b>
+                    <span>Custom Cover Letter</span>
+                    <span className="num">$49</span>
+                  </b>
+                  <p>Tailored specifically to one target role and company. Word + PDF delivered within 24–48h.</p>
+                </div>
                 <button
                   type="button"
                   onClick={() => handleSelectService('Targeted Cover Letter — $49')}
-                  className="ul"
-                  style={{ marginTop: '8px', display: 'inline-block', fontSize: '13px', fontWeight: 600 }}
+                  className="ul self-start"
+                  style={{ fontSize: '13.5px', fontWeight: 600 }}
                 >
                   Select Cover Letter →
                 </button>
               </div>
 
               <div className="addon">
-                <b>
-                  <span>Résumé Tailoring</span>
-                  <span className="num">$45</span>
-                </b>
-                <p>Fine-tuning an existing résumé for a specific job posting or keyword-heavy ATS requisition.</p>
+                <div>
+                  <b>
+                    <span>Résumé Tailoring</span>
+                    <span className="num">$45</span>
+                  </b>
+                  <p>Fine-tuning an existing résumé for a specific job posting or keyword-heavy ATS requisition.</p>
+                </div>
                 <button
                   type="button"
                   onClick={() => handleSelectService('Job-Specific Résumé Tailoring — $45')}
-                  className="ul"
-                  style={{ marginTop: '8px', display: 'inline-block', fontSize: '13px', fontWeight: 600 }}
+                  className="ul self-start"
+                  style={{ fontSize: '13.5px', fontWeight: 600 }}
                 >
                   Select Tailoring →
                 </button>
               </div>
 
               <div className="addon">
-                <b>
-                  <span>Interview Prep Session</span>
-                  <span className="num">$65</span>
-                </b>
-                <p>45-minute 1-on-1 Google Meet session paired with a brief written interview preparation guide.</p>
+                <div>
+                  <b>
+                    <span>Interview Prep Session</span>
+                    <span className="num">$65</span>
+                  </b>
+                  <p>45-minute 1-on-1 Google Meet session paired with a brief written interview preparation guide.</p>
+                </div>
                 <button
                   type="button"
                   onClick={() => handleSelectService('Interview Preparation Session — $65')}
-                  className="ul"
-                  style={{ marginTop: '8px', display: 'inline-block', fontSize: '13px', fontWeight: 600 }}
+                  className="ul self-start"
+                  style={{ fontSize: '13.5px', fontWeight: 600 }}
                 >
                   Select Interview Prep →
                 </button>
               </div>
 
               <div className="addon free">
-                <b>
-                  <span>DIY Recommendations</span>
-                  <span>$0 Free</span>
-                </b>
-                <p>Complimentary résumé feedback with practical recommendations for job seekers updating on their own.</p>
+                <div>
+                  <b>
+                    <span>DIY Recommendations</span>
+                    <span>$0 Free</span>
+                  </b>
+                  <p>Complimentary résumé feedback with practical recommendations for job seekers updating on their own.</p>
+                </div>
                 <button
                   type="button"
                   onClick={() => setIsAssessmentModalOpen(true)}
-                  className="ul"
-                  style={{ marginTop: '8px', display: 'inline-block', fontSize: '13px', fontWeight: 600, background: 'none', border: 'none', padding: 0, color: 'inherit', cursor: 'pointer' }}
+                  className="ul self-start"
+                  style={{ fontSize: '13.5px', fontWeight: 600 }}
                 >
                   Request DIY Review →
                 </button>

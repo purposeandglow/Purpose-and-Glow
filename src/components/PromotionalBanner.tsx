@@ -27,11 +27,11 @@ export function PromotionalBanner({ onOpenAssessment }: PromotionalBannerProps) 
   return (
     <aside
       aria-label="Promotional Announcement"
-      className="relative z-50 bg-gradient-to-r from-[#9C1450] via-[#C2185B] to-[#7B1038] text-white py-2 px-3 sm:px-6 text-xs transition-all duration-300 shadow-sm"
+      className="relative z-50 bg-gradient-to-r from-[#9C1450] via-[#C2185B] to-[#7B1038] text-white py-2 px-4 sm:px-6 lg:px-8 text-xs transition-all duration-300 shadow-sm font-[var(--sans)]"
     >
-      <div className="max-w-6xl mx-auto flex items-center justify-between gap-2 sm:gap-3">
+      <div className="max-w-[1196px] mx-auto flex items-center justify-between gap-2 sm:gap-3">
         <div className="flex items-center gap-2 min-w-0">
-          <span className="p-1 rounded bg-white/20 shrink-0 hidden xs:inline-flex">
+          <span className="p-1 rounded bg-white/20 shrink-0 hidden sm:inline-flex">
             <Sparkles className="w-3.5 h-3.5 text-pink-200" />
           </span>
           <span className="font-medium truncate">

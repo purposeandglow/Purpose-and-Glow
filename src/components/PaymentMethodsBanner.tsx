@@ -8,10 +8,10 @@ interface PaymentMethodsBannerProps {
 export function PaymentMethodsBanner({ isDarkMode = false }: PaymentMethodsBannerProps) {
   return (
     <div
-      className={`rounded-2xl border p-5 sm:p-6 transition-all duration-200 ${
+      className={`rounded-xl border p-5 sm:p-6 transition-all duration-200 font-[var(--sans)] ${
         isDarkMode
           ? 'bg-[#121624] border-slate-800 text-slate-100'
-          : 'bg-white border-[#fce8f0] text-slate-900 shadow-sm'
+          : 'bg-white border-[#fce8f0] text-slate-900 shadow-xs'
       }`}
     >
       <div className="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -23,7 +23,7 @@ export function PaymentMethodsBanner({ isDarkMode = false }: PaymentMethodsBanne
           <h4 className="text-base sm:text-lg font-bold">
             Accepted Payment Methods
           </h4>
-          <p className="text-xs opacity-80 max-w-xl leading-relaxed">
+          <p className="text-xs sm:text-[13px] opacity-80 max-w-xl leading-relaxed">
             Purpose &amp; Glow accepts Apple Pay, Venmo, and Square invoices with zero surprise fees or recurring subscriptions. Payment links and invoices are sent directly once you confirm your service—payment plans are available upon request.
           </p>
         </div>
