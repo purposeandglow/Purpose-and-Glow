@@ -495,11 +495,6 @@ html.dark, body.dark, .dark {
     max-width:70ch;
     line-height:1.5;
   }
-  .hero-cta small{
-    font-family:var(--sans);
-    font-size:12px;
-    color:var(--ink-3);
-  }
   .stats{
     display:grid;
     grid-template-columns:repeat(4,minmax(0,1fr));
@@ -1007,7 +1002,6 @@ html.dark, body.dark, .dark {
     }
     html.dark .hero-accent,.dark .hero-accent{opacity:0.12!important}
     .hero .wrap{position:relative;z-index:2}
-    .hero-cta small{display:none}
     .ticks{display:none}
     .q-list{grid-template-columns:1fr;gap:12px;margin-top:20px}
     .q-list li{padding:12px 0}

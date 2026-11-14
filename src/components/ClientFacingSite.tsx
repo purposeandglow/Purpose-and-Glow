@@ -248,28 +248,12 @@ export function ClientFacingSite({
     };
   }, [selectedSample]);
 
-  // Keyboard shortcut: Shift + C jumps directly to contact form, Escape closes mobile menu cleanly
+  // Keyboard accessibility: Escape closes mobile menu cleanly and restores focus
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (e.key === 'Escape' && isMobileMenuOpen) {
         setIsMobileMenuOpen(false);
         window.setTimeout(() => burgerRef.current?.focus(), 0);
-        return;
-      }
-
-      if (e.shiftKey && (e.key === 'C' || e.key === 'c')) {
-        const target = e.target as HTMLElement;
-        if (target && (target.tagName === 'INPUT' || target.tagName === 'TEXTAREA' || target.tagName === 'SELECT')) {
-          return;
-        }
-        e.preventDefault();
-        const contactEl = document.getElementById('contact');
-        if (contactEl) {
-          contactEl.scrollIntoView({ behavior: 'smooth' });
-          setTimeout(() => {
-            document.getElementById('fName')?.focus();
-          }, 400);
-        }
       }
     };
 
@@ -941,9 +925,6 @@ export function ClientFacingSite({
                   <p className="hero-cta-note">
                     Initial résumé feedback, DIY recommendations, and job search registration are free ($0). Personalized writing services are paid, and free guidance does not guarantee interviews or job placement.
                   </p>
-                  <small>
-                    Press <kbd>Shift</kbd> + <kbd>C</kbd> to jump straight to consultation inquiries
-                  </small>
                 </div>
               </div>
             </div>

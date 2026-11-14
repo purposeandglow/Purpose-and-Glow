@@ -212,5 +212,8 @@ describe('Phase 7 Firebase Hosting & Static Launch Preparation', () => {
     expect(obsidianCss).toContain('@media (max-width:768px)');
     expect(obsidianCss).toContain('@media (max-width:600px)');
     expect(obsidianCss).toContain('@media (max-width:390px)');
+
+    const siteTsx = readProjectFile('src/components/ClientFacingSite.tsx');
+    expect(siteTsx).not.toContain('jump straight to consultation inquiries');
   });
 });
