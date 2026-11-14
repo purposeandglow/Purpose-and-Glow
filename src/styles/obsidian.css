@@ -366,19 +366,20 @@ html.dark, body.dark, .dark {
   /* ========== HERO ========== */
   .hero{
     position:relative;
-    overflow-x:clip;
+    overflow:clip;
+    isolation:isolate;
     padding:clamp(28px, 4vw, 52px) 0 clamp(36px, 4.5vw, 56px);
   }
   .hero-accent{
     position:absolute;
     right:-6%;
-    top:-10%;
+    top:0;
+    bottom:0;
     width:64%;
-    height:125%;
+    height:100%;
     z-index:0;
     pointer-events:none;
     overflow:hidden;
-    will-change:transform;
   }
   .hero-accent svg{width:100%;height:100%}
   .hero .wrap{position:relative;z-index:1}
@@ -535,7 +536,7 @@ html.dark, body.dark, .dark {
   }
 
   /* ========== BLOCKS ========== */
-  .block{padding:clamp(42px, 5vw, 64px) 0;border-top:1px solid var(--hair)}
+  .block{position:relative;z-index:1;background:var(--paper);padding:clamp(42px, 5vw, 64px) 0;border-top:1px solid var(--hair)}
   #testimony,#pricing{background:var(--paper-2)}
   .block-grid{
     display:grid;

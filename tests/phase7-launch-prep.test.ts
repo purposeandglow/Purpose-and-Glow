@@ -197,6 +197,12 @@ describe('Phase 7 Firebase Hosting & Static Launch Preparation', () => {
     expect(obsidianCss).toContain('white-space:nowrap');
     // .hero must never mask horizontal child overflow with overflow:hidden
     expect(obsidianCss).not.toMatch(/\.hero\{[^}]*overflow:\s*hidden/);
+    // .hero must clip both axes and isolate stacking context so .hero-accent cannot overlap #work
+    expect(obsidianCss).toMatch(/\.hero\{[^}]*overflow:\s*clip/);
+    expect(obsidianCss).toMatch(/\.hero\{[^}]*isolation:\s*isolate/);
+    expect(obsidianCss).not.toMatch(/\.hero-accent\{[^}]*height:\s*125%/);
+    expect(obsidianCss).not.toMatch(/\.hero-accent\{[^}]*top:\s*-10%/);
+    expect(obsidianCss).toMatch(/\.block\{[^}]*position:\s*relative;[^}]*z-index:\s*1;[^}]*background:\s*var\(--paper\)/);
     // .hero-foot must not squeeze .stats inside a `1fr auto` grid beside .hero-cta
     expect(obsidianCss).not.toMatch(/\.hero-foot\{[^}]*1fr auto/);
     // Responsive breakpoints covering 1024px collapse, 834/768px tablet, and 430/375px phone
